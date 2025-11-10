@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaAI | Welcome</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.24.min.js"></script>
+    <script src="https://unpkg.com/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+   
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #7c3aed;
+            --primary-light: #ddd6fe;
+            --secondary-color: #4f46e5;
+            --background-light: #f5f5f7;
+            --text-dark: #1e293b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-glass-effect {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(30, 41, 59, 0.2);
+        }
+
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(124, 58, 237, 0.15);
+        }
+    </style>
+</head>
+<body class="h-screen" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="darkMode ? 'bg-gray-900 text-white' : ''"
+    <!-- Background Elements -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="z-10 border-b" :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect border-gray-100'">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">LinguaAI</span>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="./about.html" class="transition-all" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">About</a>
+                    <a href="./pricing.html" class="transition-all" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">Pricing</a>
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="p-2 rounded-full transition-all" 
+                            :class="darkMode ? 'hover:bg-gray-700 text-yellow-300' : 'hover:bg-gray-100 text-gray-600'">
+                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                    <a href="./pg.html" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 btn-primary">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="min-h-screen flex items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="text-center">
+                <h1 class="text-5xl font-bold mb-8" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    AI-Powered Translation for the Modern World
+                </h1>
+                <p class="text-xl mb-12 max-w-2xl mx-auto" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    Transform your content into multiple European languages with accuracy and cultural relevance using our advanced AI translation platform.
+                </p>
+                <a href="./pg.html" class="gradient-bg text-white px-8 py-4 rounded-xl text-lg font-medium btn-primary inline-block">
+                    Start Translating Now
+                </a>
+            </div>
+
+            <!-- Features -->
+            <!-- <div class="grid md:grid-cols-3 gap-8 mt-20">
+                <div class="p-6 rounded-2xl card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="w-14 h-14 rounded-full gradient-bg flex items-center justify-center text-white mb-6">
+                        <i class="fas fa-language text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">European Languages</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Support for major European languages including English, Spanish, French, and German.</p>
+                </div>
+                <div class="p-6 rounded-2xl card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="w-14 h-14 rounded-full gradient-bg flex items-center justify-center text-white mb-6">
+                        <i class="fas fa-brain text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">AI-Powered</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Advanced machine learning for context-aware, natural translations.</p>
+                </div>
+                <div class="p-6 rounded-2xl card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="w-14 h-14 rounded-full gradient-bg flex items-center justify-center text-white mb-6">
+                        <i class="fas fa-bolt text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Real-Time</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Instant translations for all your content needs.</p>
+                </div>
+            </div> -->
+
+            <div class="grid md:grid-cols-3 gap-8 mt-20">
+                <div class="p-6 rounded-xl shadow-lg card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <i class="fas fa-language text-3xl mb-4" :class="darkMode ? 'text-purple-400' : 'text-indigo-600'"></i>
+                    <h3 class="text-xl font-semibold mb-2" :class="darkMode ? 'text-white' : 'text-gray-900'">European Languages</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Support for major European languages including English, Spanish, French, and German.</p>
+                </div>
+                <div class="p-6 rounded-xl shadow-lg card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <i class="fas fa-brain text-3xl mb-4" :class="darkMode ? 'text-purple-400' : 'text-indigo-600'"></i>
+                    <h3 class="text-xl font-semibold mb-2" :class="darkMode ? 'text-white' : 'text-gray-900'">AI-Powered</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Advanced machine learning for context-aware, natural translations.</p>
+                </div>
+                <div class="p-6 rounded-xl shadow-lg card" :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <i class="fas fa-bolt text-3xl mb-4" :class="darkMode ? 'text-purple-400' : 'text-indigo-600'"></i>
+                    <h3 class="text-xl font-semibold mb-2" :class="darkMode ? 'text-white' : 'text-gray-900'">Real-Time</h3>
+                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Instant translations for all your content needs.</p>
+                </div>
+            </div>
+           
+        </div>
+    </div>
+
+    <!-- Pricing Section -->
+
+    <script>
+        // Cognito Configuration
+        const poolData = {
+            UserPoolId: 'YOUR_USER_POOL_ID',
+            ClientId: 'YOUR_CLIENT_ID'
+        };
+        
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+        let currentUser = null;
+
+        // Check authentication on page load
+        window.onload = function() {
+            checkAuthStatus();
+        };
+
+        function checkAuthStatus() {
+            currentUser = userPool.getCurrentUser();
+            
+            if (currentUser) {
+                currentUser.getSession((err, session) => {
+                    if (err || !session.isValid()) {
+                        localStorage.removeItem('cognitoAuth');
+                        return;
+                    }
+                    // User is authenticated
+                    localStorage.setItem('cognitoAuth', 'true');
+                    console.log('User is authenticated');
+                });
+            } else {
+                localStorage.removeItem('cognitoAuth');
+            }
+        }
+
+        // Route protection
+        function protectRoute() {
+            currentUser = userPool.getCurrentUser();
+            if (!currentUser) {
+                return false;
+            }
+            
+            currentUser.getSession((err, session) => {
+                if (err || !session.isValid()) {
+                    return false;
+                }
+            });
+            
+            return true;
+        }
+
+        // Listen for storage changes across tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'darkMode') {
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>

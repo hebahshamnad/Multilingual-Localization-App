@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaAI | User Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1563.0.min.js"></script>
+    <script src="https://unpkg.com/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #7c3aed;
+            --primary-light: #ddd6fe;
+            --secondary-color: #4f46e5;
+            --background-light: #f5f5f7;
+            --text-dark: #1e293b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-glass-effect {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(30, 41, 59, 0.2);
+        }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            transform: translateX(5px);
+        }
+
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(124, 58, 237, 0.15);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #7c3aed;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Light mode scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Dark mode scrollbar */
+        .dark-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="h-screen flex" x-data="profileData()" :class="darkMode ? 'bg-gray-900 text-white' : ''">
+    <!-- Background Elements - Reduced opacity -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="mainSidebar" class="w-80 flex flex-col h-full z-10 border-r border-gray-100 hidden" 
+         :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect'">
+        <!-- Logo Section -->
+        <div class="p-6 gradient-bg text-white">
+            <div class="flex items-center justify-between">
+                <a href="index.html" class="text-2xl font-bold">LinguaAI</a>
+            </div>
+        </div>
+
+        <!-- User Profile Summary -->
+        <div class="p-6 border-b" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+            <div class="flex items-center">
+                <img :src="user.name !== '-' ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7c3aed&color=fff` : `https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('user') || 'User')}&background=7c3aed&color=fff`" 
+                     class="w-16 h-16 rounded-full border-2"
+                     :class="darkMode ? 'border-gray-700' : 'border-purple-100'"
+                     :alt="user.name !== '-' ? user.name : (localStorage.getItem('user') || 'User')">
+                <div class="ml-4">
+                    <h2 class="font-semibold text-lg" x-text="user.name"></h2>
+                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="user.plan"></p>
+                    <div class="flex items-center mt-1">
+                        <div class="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                        <span class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex-1 overflow-y-auto p-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-4" 
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Account</h3>
+            <nav class="space-y-1">
+                <a href="#" @click.prevent="activeTab = 'profile'" 
+                   class="sidebar-item flex items-center px-4 py-3 rounded-lg transition-colors"
+                   :class="activeTab === 'profile' ? 
+                          (darkMode ? 'bg-gray-800 text-purple-300' : 'bg-purple-50 text-purple-700') : 
+                          (darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-purple-50')">
+                    <i class="fas fa-user-circle w-5 text-center" 
+                       :class="activeTab === 'profile' ? 'text-purple-500' : ''"></i>
+                    <span class="ml-3">My Profile</span>
+                </a>
+
+                <a href="#" @click.prevent="activeTab = 'billing'" 
+                   class="sidebar-item flex items-center px-4 py-3 rounded-lg transition-colors"
+                   :class="activeTab === 'billing' ? 
+                          (darkMode ? 'bg-gray-800 text-purple-300' : 'bg-purple-50 text-purple-700') : 
+                          (darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-purple-50')">
+                    <i class="fas fa-credit-card w-5 text-center"
+                       :class="activeTab === 'billing' ? 'text-purple-500' : ''"></i>
+                    <span class="ml-3">Billing</span>
+                </a>
+                <a href="#" @click.prevent="activeTab = 'notifications'" 
+                   class="sidebar-item flex items-center px-4 py-3 rounded-lg transition-colors"
+                   :class="activeTab === 'notifications' ? 
+                          (darkMode ? 'bg-gray-800 text-purple-300' : 'bg-purple-50 text-purple-700') : 
+                          (darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-purple-50')">
+                    <i class="fas fa-bell w-5 text-center"
+                       :class="activeTab === 'notifications' ? 'text-purple-500' : ''"></i>
+                    <span class="ml-3">Notifications</span>
+                </a>
+            </nav>
+            
+            <h3 class="text-xs font-semibold uppercase tracking-wider mb-4 mt-8" 
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">App</h3>
+            <nav class="space-y-1">
+                <a href="pg.html" 
+                   class="sidebar-item flex items-center px-4 py-3 rounded-lg transition-colors"
+                   :class="darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-purple-50'">
+                    <i class="fas fa-language w-5 text-center"></i>
+                    <span class="ml-3">Translations</span>
+                </a>
+               
+            </nav>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="p-4 border-t" :class="darkMode ? 'border-gray-700' : 'border-gray-100'">
+            <button @click="logout()" class="w-full py-2 px-4 text-center rounded-xl flex items-center justify-center space-x-2 transition-colors"
+               :class="darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="flex-1 flex flex-col h-full hidden">
+        <!-- Header -->
+        <header class="z-10 border-b" 
+                :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect border-gray-100'">
+            <!-- Navigation Bar -->
+            <nav class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <!-- Left: Title & Breadcrumbs -->
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-xl font-semibold">My Profile</h1>
+                        <div class="hidden md:flex items-center space-x-2 text-sm" 
+                             :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                            <a href="index.html" class="transition-all" 
+                               :class="darkMode ? 'hover:text-purple-300' : 'hover:text-purple-600'">Home</a>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                            <span :class="darkMode ? 'text-purple-300' : 'text-purple-600'">Profile</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-6">
+                        <!-- Translation Page Link -->
+                        <a href="pg.html" class="p-2 rounded-full transition-all" 
+                           :class="darkMode ? 'hover:bg-gray-700 text-purple-300 hover:text-purple-200' : 'hover:bg-gray-100 text-purple-600 hover:text-purple-700'">
+                            <i class="fas fa-language"></i>
+                        </a>
+                        
+                        <!-- Theme Toggle -->
+                        <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="p-2 rounded-full transition-all" 
+                                :class="darkMode ? 'hover:bg-gray-700 text-yellow-300' : 'hover:bg-gray-100 text-gray-600'">
+                            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-6">
+            <!-- Status Message -->
+            <div x-show="updateStatus.message" 
+                 :class="{
+                    'bg-green-100 text-green-800 border-green-200': updateStatus.type === 'success',
+                    'bg-red-100 text-red-800 border-red-200': updateStatus.type === 'error',
+                    'bg-blue-100 text-blue-800 border-blue-200': updateStatus.type === 'info'
+                 }"
+                 class="mb-4 p-3 rounded-lg border text-center transition-all duration-300 transform">
+                <span x-text="updateStatus.message"></span>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <!-- Profile Tab -->
+                <div x-show="activeTab === 'profile'" class="space-y-6">
+                    <!-- Personal Information -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h2 class="text-lg font-medium">Personal Information</h2>
+                            </div>
+                            <button @click="togglePersonalEdit()" class="px-4 py-2 rounded-lg text-sm transition-colors"
+                                    :class="darkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
+                                <span x-text="editingPersonal ? 'Save' : 'Edit'"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                                    Full Name
+                                </label>
+                                <input type="text" x-model="user.name" 
+                                       class="w-full p-3 border rounded-xl input-focus outline-none bg-opacity-70" 
+                                       :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200'"
+                                       :disabled="!editingPersonal">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                                    Email Address
+                                </label>
+                                <input type="email" :value="user.email" 
+                                       class="w-full p-3 border rounded-xl input-focus outline-none bg-opacity-70 disabled:opacity-70" 
+                                       :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200'"
+                                       disabled>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                                    Phone Number
+                                </label>
+                                <div class="relative">
+                                    <input type="tel" x-model="user.phone" 
+                                           @input="formatPhoneNumber"
+                                           placeholder="xxx-xxx-xxxx" 
+                                           class="w-full p-3 border rounded-xl input-focus outline-none bg-opacity-70" 
+                                           :class="{
+                                               'bg-gray-800 border-gray-700 text-white': darkMode,
+                                               'bg-white border-gray-200': !darkMode,
+                                               'border-red-500': editingPersonal && user.phone && !validatePhoneNumber()
+                                           }"
+                                           :disabled="!editingPersonal">
+                                    <div x-show="editingPersonal && user.phone && !validatePhoneNumber()" 
+                                         class="text-xs text-red-500 mt-1">
+                                        Please use format: xxx-xxx-xxxx
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                                    Location
+                                </label>
+                                <div class="relative">
+                                    <select x-model="user.location" 
+                                           class="w-full p-3 border rounded-xl input-focus outline-none bg-opacity-70" 
+                                           :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200'"
+                                           :disabled="!editingPersonal">
+                                        <option value="">Select location</option>
+                                        <template x-for="location in loadUSLocations()" :key="location">
+                                            <option :value="location" x-text="location"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Information -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-id-badge"></i>
+                            </div>
+                            <h2 class="text-lg font-medium">Account Information</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Subscription Plan</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="user.plan"></p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs gradient-bg text-white">Active</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Member Since</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="user.memberSince"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Usage</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="`${user.usage.translations} translations this month`"></p>
+                                </div>
+                                <div class="w-24">
+                                    <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-full gradient-bg" :style="`width: ${user.usage.percentage}%`"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Language Preferences -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                                <h2 class="text-lg font-medium">Language Preferences</h2>
+                            </div>
+                            <button @click="toggleLanguageEdit()" class="px-4 py-2 rounded-lg text-sm transition-colors"
+                                    :class="darkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
+                                <span x-text="editingLanguages ? 'Save' : 'Edit'"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <template x-for="(language, index) in user.languages" :key="index">
+                                <div class="flex justify-between items-center p-4 rounded-lg" 
+                                     :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                    <div class="flex items-center">
+                                        <div x-show="!editingLanguages">
+                                            <img :src="`https://flagcdn.com/w40/${language.flag}.png`" :alt="language.name" class="w-8 h-6 mr-3">
+                                        </div>
+                                        <!-- Flag is automatically set based on language -->
+                                        <div>
+                                            <div x-show="!editingLanguages">
+                                                <h3 class="font-medium" x-text="language.name"></h3>
+                                                <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="language.level"></p>
+                                            </div>
+                                            <div x-show="editingLanguages" class="space-y-2">
+                                                <select x-model="language.name" class="w-full p-1 border rounded input-focus outline-none" 
+                                                       :class="darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'">
+                                                    <template x-for="availableLang in getAvailableLanguagesForIndex(index)" :key="availableLang">
+                                                        <option :value="availableLang" x-text="availableLang"></option>
+                                                    </template>
+                                                </select>
+                                                <select x-model="language.level" class="w-full p-1 border rounded" 
+                                                       :class="darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'">
+                                                    <option value="Native">Native</option>
+                                                    <option value="Fluent">Fluent</option>
+                                                    <option value="Advanced">Advanced</option>
+                                                    <option value="Intermediate">Intermediate</option>
+                                                    <option value="Basic">Basic</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span x-show="index === 0" class="px-3 py-1 rounded-full text-xs mr-2" 
+                                              :class="darkMode ? 'bg-gray-700 text-gray-300' : 'bg-purple-100 text-purple-700'">Default</span>
+                                        <button x-show="editingLanguages && user.languages.length > 1" @click="removeLanguage(index)" 
+                                                class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="editingLanguages" class="mt-4">
+                                <button @click="addLanguage()" 
+                                        :disabled="user.languages.length >= 3"
+                                        class="w-full p-2 border border-dashed rounded-lg flex items-center justify-center"
+                                        :class="{
+                                            'border-gray-600 text-gray-400 hover:text-gray-300': darkMode && user.languages.length < 3,
+                                            'border-gray-300 text-gray-500 hover:text-gray-700': !darkMode && user.languages.length < 3,
+                                            'border-gray-600 text-gray-600 cursor-not-allowed': darkMode && user.languages.length >= 3,
+                                            'border-gray-200 text-gray-400 cursor-not-allowed': !darkMode && user.languages.length >= 3
+                                        }">
+                                    <i class="fas fa-plus mr-2"></i> Add Language
+                                    <span x-show="user.languages.length >= 3" class="ml-2 text-xs">(Max reached)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                
+                <!-- Billing Tab -->
+                <div x-show="activeTab === 'billing'" class="space-y-6">
+                    <!-- Current Plan -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <h2 class="text-lg font-medium">Current Plan</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 rounded-lg border-2 border-purple-200" 
+                                 :class="darkMode ? 'bg-gray-800 border-purple-600' : 'bg-purple-50'">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-semibold text-lg" x-text="user.plan"></h3>
+                                    <span class="px-3 py-1 rounded-full text-xs gradient-bg text-white">Active</span>
+                                </div>
+                                <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="getPlanDescription(user.plan)"></p>
+                                <div class="mt-3 flex justify-between items-center">
+                                    <span class="text-2xl font-bold" x-text="getPlanPrice(user.plan)"></span>
+                                    <button class="px-4 py-2 rounded-lg text-sm transition-colors"
+                                            :class="darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-white hover:bg-gray-50 text-gray-700 border'">
+                                        Change Plan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage & Billing History -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <h2 class="text-lg font-medium">Usage & Billing</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-medium">This Month's Usage</span>
+                                    <span class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'" x-text="`${user.usage.translations} translations`"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="gradient-bg h-2 rounded-full" :style="`width: ${user.usage.percentage}%`"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Next Billing Date</span>
+                                    <span class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Dec 15, 2024</span>
+                                </div>
+                            </div>
+                            
+                          
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Tab -->
+                <div x-show="activeTab === 'notifications'" class="space-y-6">
+                    <!-- Email Notifications -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h2 class="text-lg font-medium">Email Notifications</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Translation Updates</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Get notified when translations are completed</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Account Updates</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Important account and billing notifications</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Marketing Emails</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Product updates and promotional content</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Push Notifications -->
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <h2 class="text-lg font-medium">Push Notifications</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Browser Notifications</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Receive notifications in your browser</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 rounded-lg" 
+                                 :class="darkMode ? 'bg-gray-800' : 'bg-white bg-opacity-70'">
+                                <div>
+                                    <h3 class="font-medium">Sound Notifications</h3>
+                                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Play sound for important notifications</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function profileData() {
+            return {
+                darkMode: localStorage.getItem('darkMode') === 'true',
+                activeTab: 'profile',
+                editingPersonal: false,
+                editingLanguages: false,
+                updateStatus: { message: '', type: '' },
+                user: {
+                    UserId: 0,
+                    name: '-',
+                    email: '-',
+                    phone: '-',
+                    location: '-',
+                    plan: '-',
+                    memberSince: '-',
+                    usage: {
+                        translations: 0,
+                        percentage: 0
+                    },
+                    languages: [
+                        { name: '-', level: '-', flag: '' },
+                        { name: '-', level: '-', flag: '' }
+                    ]
+                },
+                
+                async init() {
+                    await this.loadProfileData();
+                    // Initialize US locations
+                    this.usLocations = this.loadUSLocations();
+                },
+                
+                async loadProfileData() {
+                    try {
+                        const username = localStorage.getItem('user');
+                        const apiEndpoint = `YOUR_API_ENDPOINT/users/get-user?username=${username}`;
+                        
+                        const response = await fetch(apiEndpoint, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.updateUserData(data);
+                        } else {
+                            console.log('API call failed, using default data');
+                        }
+                    } catch (error) {
+                        console.log('Error loading profile data:', error.message);
+                    }
+                },
+                
+                updateUserData(data) {
+                    this.user.UserId = data.UserId || this.user.UserId;
+                    this.user.name = data.name || this.user.name;
+                    this.user.email = data.email || this.user.email;
+                    this.user.phone = data.phone || this.user.phone;
+                    this.user.location = data.location || this.user.location;
+                    this.user.plan = data.plan || this.user.plan;
+                    this.user.memberSince = data.memberSince || this.user.memberSince;
+                    this.user.usage.translations = data.usage?.translations || this.user.usage.translations;
+                    this.user.usage.percentage = data.usage?.percentage || this.user.usage.percentage;
+                    this.user.languages = data.languages || this.user.languages;
+                    
+                    // Ensure languages have proper structure
+                    if (this.user.languages.length === 0) {
+                        this.user.languages = [{ name: 'English', level: 'Native', flag: 'us' }];
+                    }
+                },
+                
+                togglePersonalEdit() {
+                    if (this.editingPersonal) {
+                        this.savePersonalInfo();
+                    } else {
+                        this.editingPersonal = true;
+                    }
+                },
+                
+                toggleLanguageEdit() {
+                    if (this.editingLanguages) {
+                        this.saveLanguagePreferences();
+                    } else {
+                        this.editingLanguages = true;
+                    }
+                },
+                
+                async savePersonalInfo() {
+                    try {
+                        // Validate phone number format
+                        if (!this.validatePhoneNumber()) {
+                            this.updateStatus = { message: 'Please enter a valid phone number in format: xxx-xxx-xxxx', type: 'error' };
+                            setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                            return;
+                        }
+                        
+                        const username = localStorage.getItem('user');
+                        const token = localStorage.getItem('idToken');
+                        const apiEndpoint = `YOUR_API_ENDPOINT/users/update-user`;
+                        
+                        // Show loading state
+                        this.updateStatus = { message: 'Updating profile...', type: 'info' };
+                        
+                        const response = await fetch(apiEndpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                username: username,
+                                name: this.user.name,
+                                phone: this.user.phone,
+                                location: this.user.location
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.user) {
+                                // Update local user data with the response
+                                this.updateUserData(data.user);
+                            }
+                            this.updateStatus = { message: 'Personal information updated successfully', type: 'success' };
+                            setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                            this.editingPersonal = false;
+                        } else {
+                            const errorData = await response.json();
+                            this.updateStatus = { message: errorData.message || 'Failed to update profile', type: 'error' };
+                            setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                        }
+                    } catch (error) {
+                        console.error('Error updating profile:', error);
+                        this.updateStatus = { message: 'An error occurred while updating profile', type: 'error' };
+                        setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                async saveLanguagePreferences() {
+                    try {
+                        const username = localStorage.getItem('user');
+                        const token = localStorage.getItem('idToken');
+                        const apiEndpoint = `YOUR_API_ENDPOINT/users/update-user`;
+                        
+                        // Update language flags based on language name
+                        const languageFlags = {
+                            'English': 'us',
+                            'Spanish': 'es',
+                            'French': 'fr',
+                            'German': 'de',
+                            'Italian': 'it',
+                            'Portuguese': 'pt'
+                        };
+                        
+                        // Sort languages by fluency level before saving
+                        this.sortLanguagesByFluency();
+                        
+                        // Set the correct flag for each language
+                        const updatedLanguages = this.user.languages.map(lang => ({
+                            name: lang.name,
+                            level: lang.level,
+                            flag: languageFlags[lang.name] || 'us'
+                        }));
+                        
+                        const response = await fetch(apiEndpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                username: username,
+                                languages: updatedLanguages
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.user) {
+                                // Update local user data with the response
+                                this.updateUserData(data.user);
+                            } else {
+                                // Update the local languages with the correct flags
+                                this.user.languages = updatedLanguages;
+                            }
+                            this.updateStatus = { message: 'Language preferences updated successfully', type: 'success' };
+                            setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                            this.editingLanguages = false;
+                            // Navigate back to normal view
+                            this.activeTab = 'profile';
+                        } else {
+                            const errorData = await response.json();
+                            this.updateStatus = { message: errorData.message || 'Failed to update language preferences', type: 'error' };
+                            setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                        }
+                    } catch (error) {
+                        console.error('Error updating language preferences:', error);
+                        this.updateStatus = { message: 'An error occurred while updating language preferences', type: 'error' };
+                        setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                // Helper function to get flag code from language name
+                getLanguageFlag(languageName) {
+                    const languageFlags = {
+                        'English': 'us',
+                        'Spanish': 'es',
+                        'French': 'fr',
+                        'German': 'de',
+                        'Italian': 'it',
+                        'Portuguese': 'pt'
+                    };
+                    return languageFlags[languageName] || 'us';
+                },
+                
+                addLanguage() {
+                    // Get all currently selected languages
+                    const selectedLanguages = this.user.languages.map(lang => lang.name);
+                    
+                    // Find the first available language that's not already selected
+                    const availableLanguages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'];
+                    const newLanguage = availableLanguages.find(lang => !selectedLanguages.includes(lang));
+                    
+                    // Only add if we found an available language and we're under the limit
+                    if (newLanguage && this.user.languages.length < 3) {
+                        this.user.languages.push({ name: newLanguage, level: 'Basic', flag: this.getLanguageFlag(newLanguage) });
+                        // Sort languages by fluency level
+                        this.sortLanguagesByFluency();
+                    } else if (this.user.languages.length >= 3) {
+                        this.updateStatus = { message: 'Maximum of 3 languages allowed', type: 'info' };
+                        setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                    } else {
+                        this.updateStatus = { message: 'All available languages have been added', type: 'info' };
+                        setTimeout(() => this.updateStatus = { message: '', type: '' }, 3000);
+                    }
+                },
+                
+                removeLanguage(index) {
+                    if (this.user.languages.length > 1) {
+                        this.user.languages.splice(index, 1);
+                    }
+                },
+                
+                getAvailableLanguagesForIndex(index) {
+                    const allLanguages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'];
+                    const selectedLanguages = this.user.languages
+                        .map((lang, idx) => idx !== index ? lang.name : null)
+                        .filter(name => name !== null);
+                    
+                    // Always include the current language for this index
+                    const currentLanguage = this.user.languages[index].name;
+                    const availableLanguages = allLanguages.filter(lang => 
+                        !selectedLanguages.includes(lang) || lang === currentLanguage
+                    );
+                    
+                    return availableLanguages;
+                },
+                
+                sortLanguagesByFluency() {
+                    // Define fluency level order (highest to lowest)
+                    const fluencyOrder = {
+                        'Native': 5,
+                        'Fluent': 4,
+                        'Advanced': 3,
+                        'Intermediate': 2,
+                        'Basic': 1
+                    };
+                    
+                    // Sort languages by fluency level
+                    this.user.languages.sort((a, b) => {
+                        return fluencyOrder[b.level] - fluencyOrder[a.level];
+                    });
+                },
+                
+                formatPhoneNumber() {
+                    // Remove all non-digit characters except the leading +
+                    let phone = this.user.phone;
+                    let hasPlus = phone.startsWith('+');
+                    
+                    // Strip all non-digit characters
+                    phone = phone.replace(/[^0-9]/g, '');
+                    
+                    // Add the + back if it was there
+                    if (hasPlus) {
+                        phone = '+' + phone;
+                    }
+                    
+                    // Format the number as +x xxx-xxx-xxxx
+                    if (phone.length > 0) {
+                        if (hasPlus) {
+                            // Format with country code
+                            let countryCode = phone.substring(1, 2); // Get first digit after +
+                            let remaining = phone.substring(2);
+                            
+                            // Format the remaining digits
+                            if (remaining.length > 0) {
+                                let formatted = '';
+                                
+                                // First group (area code)
+                                if (remaining.length > 3) {
+                                    formatted += remaining.substring(0, 3) + '-';
+                                    remaining = remaining.substring(3);
+                                } else {
+                                    formatted += remaining;
+                                    remaining = '';
+                                }
+                                
+                                // Second group
+                                if (remaining.length > 3) {
+                                    formatted += remaining.substring(0, 3) + '-';
+                                    remaining = remaining.substring(3);
+                                } else if (remaining.length > 0) {
+                                    formatted += remaining;
+                                    remaining = '';
+                                }
+                                
+                                // Last group
+                                if (remaining.length > 0) {
+                                    formatted += remaining;
+                                }
+                                
+                                phone = '+' + countryCode + ' ' + formatted;
+                            } else {
+                                phone = '+' + countryCode;
+                            }
+                        } else {
+                            // No country code, format as xxx-xxx-xxxx
+                            if (phone.length > 3) {
+                                phone = phone.substring(0, 3) + '-' + phone.substring(3);
+                            }
+                            if (phone.length > 7) {
+                                phone = phone.substring(0, 7) + '-' + phone.substring(7);
+                            }
+                        }
+                    }
+                    
+                    this.user.phone = phone;
+                },
+                
+                formatPhoneNumber() {
+                    // Remove all non-digit characters
+                    let phone = this.user.phone.replace(/[^0-9]/g, '');
+                    
+                    // Format the number as xxx-xxx-xxxx
+                    if (phone.length > 0) {
+                        // First group (area code)
+                        if (phone.length > 3) {
+                            phone = phone.substring(0, 3) + '-' + phone.substring(3);
+                        }
+                        
+                        // Second group
+                        if (phone.length > 7) {
+                            phone = phone.substring(0, 7) + '-' + phone.substring(7, Math.min(11, phone.length));
+                        }
+                    }
+                    
+                    this.user.phone = phone;
+                },
+                
+                validatePhoneNumber() {
+                    // Check if phone number matches the expected format: xxx-xxx-xxxx
+                    const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
+                    return this.user.phone === '' || phoneRegex.test(this.user.phone);
+                },
+                
+                // Load US states
+                loadUSLocations() {
+                    return [
+                        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+                        "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
+                        "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", 
+                        "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
+                        "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", 
+                        "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+                        "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", 
+                        "Wisconsin", "Wyoming"
+                    ];
+                },
+                
+                validateLocation() {
+                    // No validation needed for dropdown
+                    return true;
+                },
+                
+                getPlanPrice(plan) {
+                    const prices = {
+                        'Basic': '$9/month',
+                        'Professional': '$29/month', 
+                        'Enterprise': '$99/month'
+                    };
+                    return prices[plan] || '$9/month';
+                },
+                
+                getPlanDescription(plan) {
+                    const descriptions = {
+                        'Basic': '50 translations/month • Basic support',
+                        'Professional': '1,000 translations/month • Priority support',
+                        'Enterprise': 'Unlimited translations • Premium support'
+                    };
+                    return descriptions[plan] || '100 translations/month • Basic support';
+                },
+                
+                logout() {
+                    logout();
+                }
+            }
+        }
+    </script>
+    <!-- Login Form -->
+    <div id="loginForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Login to LinguaAI</h2>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <div class="relative">
+                    <input type="password" id="password" placeholder="Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="passwordToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button id="loginBtn" onclick="login()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="loginText">Login</span>
+                    <div id="loginSpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <button type="button" onclick="showSignup()" class="w-full border border-purple-300 text-purple-600 py-3 rounded-xl font-medium hover:bg-purple-50 transition-colors">
+                    Create Account
+                </button>
+            </div>
+            <div id="loginMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="signupForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Create Account</h2>
+            <div class="space-y-4">
+                <input type="text" id="signupName" placeholder="Full Name" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <input type="email" id="signupEmail" placeholder="Email" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <input type="text" id="signupUsername" placeholder="Username" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <div class="relative">
+                    <input type="password" id="signupPassword" placeholder="Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="toggleSignupPassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="signupPasswordToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="password" id="signupPasswordConfirm" placeholder="Confirm Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="toggleSignupPasswordConfirm()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="signupPasswordConfirmToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button id="signupBtn" onclick="signup()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="signupText">Create Account</span>
+                    <div id="signupSpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <button type="button" onclick="showLogin()" class="w-full border border-gray-300 text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                    Back to Login
+                </button>
+            </div>
+            <div id="signupMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+
+    <!-- Verification Form -->
+    <div id="verifyForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Verify Email</h2>
+            <p class="text-center text-gray-600 mb-6">Enter the verification code sent to your email</p>
+            <div class="space-y-4">
+                <input type="text" id="verifyCode" placeholder="Verification Code" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <button id="verifyBtn" onclick="verifyEmail()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="verifyText">Verify</span>
+                    <div id="verifySpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <div class="flex space-x-2">
+                    <button type="button" onclick="resendVerificationCode()" class="flex-1 border border-purple-300 text-purple-600 py-3 rounded-xl font-medium hover:bg-purple-50 transition-colors">
+                        <span id="resendText">Resend Code</span>
+                        <div id="resendSpinner" class="loading-spinner ml-2 hidden inline-block"></div>
+                    </button>
+                    <!-- <button type="button" onclick="showLogin()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                        Back to Login
+                    </button> -->
+                </div>
+            </div>
+            <div id="verifyMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Cognito configuration
+        const poolData = {
+            UserPoolId: 'YOUR_USER_POOL_ID',
+            ClientId: 'YOUR_CLIENT_ID'
+        };
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('loginMessage');
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginText.textContent = 'Logging in...';
+            loginSpinner.classList.remove('hidden');
+            
+            if (!username || !password) {
+                // Reset loading state
+                loginBtn.disabled = false;
+                loginText.textContent = 'Login';
+                loginSpinner.classList.add('hidden');
+                
+                messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-red-100 text-red-700';
+                messageEl.textContent = 'Please enter both username and password';
+                messageEl.classList.remove('hidden');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                return;
+            }
+            
+            const authenticationData = {
+                Username: username,
+                Password: password
+            };
+            const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+            
+            const userData = {
+                Username: username,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: function(result) {
+                    localStorage.setItem('user', username);
+                    localStorage.setItem('accessToken', result.getAccessToken().getJwtToken());
+                    localStorage.setItem('idToken', result.getIdToken().getJwtToken());
+                    localStorage.setItem('refreshToken', result.getRefreshToken().getToken());
+                    
+                    messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-green-100 text-green-700';
+                    messageEl.textContent = 'Login successful!';
+                    messageEl.classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('loginForm').style.display = 'none';
+                        document.getElementById('loadingOverlay').style.display = 'flex';
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        setTimeout(() => {
+                            showLoggedIn();
+                            // Reload screen content after successful login
+                            location.reload();
+                        }, 0);
+                    }, 1000);
+                },
+                onFailure: function(err) {
+                    // Reset loading state
+                    loginBtn.disabled = false;
+                    loginText.textContent = 'Login';
+                    loginSpinner.classList.add('hidden');
+                    
+                    // Check if the error is due to user not being verified
+                    if (err.message && err.message.includes('not confirmed')) {
+                        // Save username for verification
+                        currentUsername = username;
+                        currentPassword = password;
+                        
+                        // Show verification form
+                        showVerify();
+                        
+                        // Show message in verification form
+                        const verifyMessageEl = document.getElementById('verifyMessage');
+                        showMessage(verifyMessageEl, 'Please verify your account to continue', 'error');
+                    } else {
+                        // Clear form fields for other errors
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        
+                        messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-red-100 text-red-700';
+                        messageEl.textContent = err.message || 'Login failed';
+                        messageEl.classList.remove('hidden');
+                    }
+                }
+            });
+
+        }
+        let currentUsername = '';
+        let currentPassword = '';
+        
+        function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+            const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+            const messageEl = document.getElementById('signupMessage');
+            const signupBtn = document.getElementById('signupBtn');
+            const signupText = document.getElementById('signupText');
+            const signupSpinner = document.getElementById('signupSpinner');
+            
+            signupBtn.disabled = true;
+            signupText.textContent = 'Creating Account...';
+            signupSpinner.classList.remove('hidden');
+            
+            if (!name || !email || !username || !password || !passwordConfirm) {
+                showMessage(messageEl, 'Please fill in all fields', 'error');
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                showMessage(messageEl, 'Passwords do not match', 'error');
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                return;
+            }
+            
+            const attributeList = [
+                new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'email', Value: email }),
+                new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'name', Value: name })
+            ];
+            
+            userPool.signUp(username, password, attributeList, null, (err, result) => {
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                if (err) {
+                    showMessage(messageEl, err.message, 'error');
+                    return;
+                }
+                currentUsername = username;
+                currentPassword = password;
+                showVerify();
+            });
+        }
+        
+        function verifyEmail() {
+            const code = document.getElementById('verifyCode').value;
+            const messageEl = document.getElementById('verifyMessage');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const verifyText = document.getElementById('verifyText');
+            const verifySpinner = document.getElementById('verifySpinner');
+            
+            if (!code) {
+                showMessage(messageEl, 'Please enter verification code', 'error');
+                return;
+            }
+            
+            verifyBtn.disabled = true;
+            verifyText.textContent = 'Verifying...';
+            verifySpinner.classList.remove('hidden');
+            
+            const userData = {
+                Username: currentUsername,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.confirmRegistration(code, true, (err, result) => {
+                resetButton(verifyBtn, verifyText, verifySpinner, 'Verify');
+                if (err) {
+                    showMessage(messageEl, err.message, 'error');
+                    return;
+                }
+                
+                // Auto-login after verification
+                const authenticationData = {
+                    Username: currentUsername,
+                    Password: currentPassword
+                };
+                const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+                
+                cognitoUser.authenticateUser(authenticationDetails, {
+                    onSuccess: async function(loginResult) {
+                        localStorage.setItem('user', currentUsername);
+                        localStorage.setItem('accessToken', loginResult.getAccessToken().getJwtToken());
+                        localStorage.setItem('idToken', loginResult.getIdToken().getJwtToken());
+                        localStorage.setItem('refreshToken', loginResult.getRefreshToken().getToken());
+                        
+                        // Create user in database
+                        await createUserProfile(currentUsername, document.getElementById('signupEmail').value, document.getElementById('signupName').value);
+                        
+                        showMessage(messageEl, 'Account verified and logged in!', 'success');
+                        setTimeout(() => {
+                            document.getElementById('verifyForm').style.display = 'none';
+                            clearSignupFields();
+                            showLoggedIn();
+                            location.reload();
+                        }, 1000);
+                    },
+                    onFailure: function(loginErr) {
+                        showMessage(messageEl, 'Verified but login failed. Please login manually.', 'error');
+                        setTimeout(() => showLogin(), 2000);
+                    }
+                });
+            });
+        }
+        
+        function showSignup() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'flex';
+            // Clear any previous error messages
+            document.getElementById('signupMessage').classList.add('hidden');
+            clearSignupFields();
+        }
+        
+        function showVerify() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'flex';
+            // Clear any previous error messages
+            document.getElementById('verifyMessage').classList.add('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'flex';
+            document.getElementById('mainSidebar').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            // Clear any previous error messages
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        function showMessage(element, message, type) {
+            element.className = `p-3 rounded-lg mt-4 text-sm text-center ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+        
+        function resetButton(btn, text, spinner, defaultText) {
+            btn.disabled = false;
+            text.textContent = defaultText;
+            spinner.classList.add('hidden');
+        }
+        
+        function clearSignupFields() {
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupPasswordConfirm').value = '';
+            document.getElementById('verifyCode').value = '';
+        }
+        
+        function logout() {
+            const cognitoUser = userPool.getCurrentUser();
+            if (cognitoUser) {
+                cognitoUser.signOut();
+            }
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('refreshToken');
+            // Clear all form fields and messages before showing login
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('signupMessage').classList.add('hidden');
+            document.getElementById('verifyMessage').classList.add('hidden');
+            clearSignupFields();
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            showLogin();
+        }
+        function showLoggedIn() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('mainSidebar').classList.remove('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+        // Check login status on load
+        function checkAuthStatus() {
+            const cognitoUser = userPool.getCurrentUser();
+            if (cognitoUser) {
+                cognitoUser.getSession((err, session) => {
+                    if (err || !session.isValid()) {
+                        showLogin();
+                    } else {
+                        showLoggedIn();
+                    }
+                });
+            } else {
+                showLogin();
+            }
+        }
+        checkAuthStatus();
+        // Listen for storage changes across tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'user') {
+                e.newValue ? showLoggedIn() : showLogin();
+            }
+            if (e.key === 'darkMode') {
+                location.reload();
+            }
+        });
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        function toggleSignupPassword() {
+            const passwordInput = document.getElementById('signupPassword');
+            const toggleIcon = document.getElementById('signupPasswordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        function toggleSignupPasswordConfirm() {
+            const passwordInput = document.getElementById('signupPasswordConfirm');
+            const toggleIcon = document.getElementById('signupPasswordConfirmToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+       
+         async function createUserProfile(username, email, name) {
+            console.log('Creating user profile for:', { username, email, name });
+            try {
+                const response = await fetch('YOUR_API_ENDPOINT/users/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        name: name
+                    })
+                });
+                
+                const responseText = await response.text();
+                console.log('Create user response:', response.status, responseText);
+                
+                if (!response.ok) {
+                    console.error('Failed to create user profile:', response.status, responseText);
+                } else {
+                    console.log('User profile created successfully');
+                }
+            } catch (error) {
+                console.error('Error creating user profile:', error);
+            }
+        }
+        
+        function resendVerificationCode() {
+            const messageEl = document.getElementById('verifyMessage');
+            const resendText = document.getElementById('resendText');
+            const resendSpinner = document.getElementById('resendSpinner');
+            
+            if (!currentUsername) {
+                showMessage(messageEl, 'Unable to resend code. Please go back to login.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            resendText.textContent = 'Sending...';
+            resendSpinner.classList.remove('hidden');
+            
+            const userData = {
+                Username: currentUsername,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.resendConfirmationCode((err, result) => {
+                // Reset button state
+                resendText.textContent = 'Resend Code';
+                resendSpinner.classList.add('hidden');
+                
+                if (err) {
+                    showMessage(messageEl, err.message || 'Failed to resend code', 'error');
+                    return;
+                }
+                
+                showMessage(messageEl, 'Verification code has been resent to your email', 'success');
+            });
+        }
+    </script>
+</body>
+</html>

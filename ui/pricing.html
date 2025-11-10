@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaAI | Pricing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #7c3aed, #4f46e5); }
+        .glass-effect { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .dark-glass-effect { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(30, 41, 59, 0.2); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(124, 58, 237, 0.15); }
+        * { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="darkMode ? 'bg-gray-900 text-white' : ''">
+    
+    <!-- Navigation -->
+    <nav class="border-b" :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect border-gray-100'">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">LinguaAI</a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="index.html" class="transition-all" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">Home</a>
+                    <a href="./about.html" class="transition-all" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">About</a>
+                    <a href="./pricing.html" class="transition-all" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">Pricing</a>
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="p-2 rounded-full transition-all" 
+                            :class="darkMode ? 'hover:bg-gray-700 text-yellow-300' : 'hover:bg-gray-100 text-gray-600'">
+                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                    <a href="./pg.html" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 btn-primary">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pricing Section -->
+    <div class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h1 class="text-5xl font-bold mb-4" :class="darkMode ? 'text-white' : 'text-gray-900'">Simple, Transparent Pricing</h1>
+                <p class="text-xl" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Choose the perfect plan for your translation needs</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8" x-data="pricingData">
+                <template x-for="tier in tiers" :key="tier.name">
+                    <div class="relative p-8 rounded-2xl card" :class="[darkMode ? 'dark-glass-effect' : 'glass-effect', tier.popular ? 'ring-2 ring-purple-500' : '']">
+                        <div x-show="tier.popular" class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                            <span class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold mb-2" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="tier.name"></h3>
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="'$' + tier.price"></span>
+                                <span class="text-gray-500">/month</span>
+                            </div>
+                            <p class="mb-8" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="tier.description"></p>
+                        </div>
+                        <ul class="space-y-4 mb-8">
+                            <template x-for="feature in tier.features" :key="feature">
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-3"></i>
+                                    <span :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="feature"></span>
+                                </li>
+                            </template>
+                        </ul>
+                        <button class="w-full py-3 px-6 rounded-xl font-medium btn-primary" 
+                                :class="tier.popular ? 'gradient-bg text-white' : (darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-100 text-gray-900 hover:bg-gray-200')">
+                            Get Started
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pricingData', () => ({
+                tiers: [
+                    {
+                        name: 'Basic',
+                        price: 9,
+                        description: 'Perfect for individuals and small projects',
+                        popular: false,
+                        features: [
+                            '50 translations/month',
+                            'Basic translation quality',
+                            'Email support',
+                            'Standard processing speed'
+                        ]
+                    },
+                    {
+                        name: 'Professional',
+                        price: 29,
+                        description: 'Ideal for businesses and content creators',
+                        popular: true,
+                        features: [
+                            '1000 translations/month',
+                            'Premium translation quality',
+                            'Priority email support',
+                            'Fast processing speed',
+                            'API access',
+                            'Bulk translation tools'
+                        ]
+                    },
+                    {
+                        name: 'Enterprise',
+                        price: 99,
+                        description: 'For large organizations with high-volume needs',
+                        popular: false,
+                        features: [
+                            'Unlimited translations',
+                            'Enterprise-grade quality',
+                            '24/7 phone & email support',
+                            'Fastest processing speed',
+                            'Full API access',
+                            'Custom integrations',
+                            'Dedicated account manager',
+                            'SLA guarantee'
+                        ]
+                    }
+                ]
+            }))
+        });
+
+        // Listen for storage changes across tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'darkMode') {
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>

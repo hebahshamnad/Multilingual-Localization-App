@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaAI | Modern Translation Platform</title>
+ 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1563.0.min.js"></script>
+    <script src="https://unpkg.com/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #7c3aed;
+            --primary-light: #ddd6fe;
+            --secondary-color: #4f46e5;
+            --background-light: #f5f5f7;
+            --text-dark: #1e293b;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-border: #334155;
+            --dark-text: #f1f5f9;
+            --dark-text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-glass-effect {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.3);
+        }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            transform: translateX(5px);
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(124, 58, 237, 0.15);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #7c3aed;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Light mode scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Dark mode scrollbar */
+        .dark-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        
+        /* Active conversation styling */
+        .translation-item.active-conversation {
+            background-color: rgb(196 181 253) !important; /* bg-purple-100 */
+            border: 1px solid rgb(147 51 234) !important; /* border-purple-300 */
+        }
+        
+        .bg-slate-900 .translation-item.active-conversation {
+            background-color: rgb(51 65 85) !important; /* bg-slate-700 */
+            border: 1px solid rgb(147 51 234) !important; /* border-purple-400 */
+        }
+        
+        /* Brand context item hover and active styles */
+        .brand-context-item:hover {
+            border-color: rgb(147 51 234) !important; /* border-purple-500 */
+            background-color: rgba(147, 51, 234, 0.05) !important;
+        }
+        
+        .bg-slate-900 .brand-context-item:hover {
+            border-color: rgb(147 51 234) !important; /* border-purple-500 */
+            background-color: rgba(147, 51, 234, 0.15) !important;
+        }
+        
+        .brand-context-item.active {
+            border-color: rgb(147 51 234) !important; /* border-purple-500 */
+            background-color: rgba(147, 51, 234, 0.1) !important;
+            transform: scale(1.02) !important;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2) !important;
+        }
+        
+        .bg-slate-900 .brand-context-item.active {
+            border-color: rgb(147 51 234) !important; /* border-purple-500 */
+            background-color: rgba(147, 51, 234, 0.2) !important;
+        }
+        
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            z-index: 9999;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast-notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .toast-notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .toast-notification i {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body class="h-screen flex" x-data="{ 
+    darkMode: localStorage.getItem('darkMode') === 'true', 
+    signOut() { 
+        localStorage.removeItem('accessToken'); 
+        localStorage.removeItem('idToken'); 
+        localStorage.removeItem('refreshToken'); 
+        localStorage.removeItem('user'); 
+        window.location.href = 'login.html'; 
+    },
+    async performSearch() {
+        const searchInput = document.getElementById('search-input');
+        const query = searchInput.value.trim();
+        if (!query) return;
+        
+        const conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+        
+        try {
+            const response = await fetch('YOUR_API_ENDPOINT/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    conversations: conversations
+                })
+            });
+            
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }
+}" :class="darkMode ? 'bg-slate-900 text-slate-100' : ''">
+    <!-- Background Elements - Reduced opacity -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="mainSidebar" class="w-80 flex flex-col h-full z-10 border-r border-gray-100 hidden" 
+         :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect'">
+        <!-- Logo Section -->
+        <div class="p-6 gradient-bg text-white">
+            <div class="flex items-center justify-between">
+                <!-- <span class="text-2xl font-bold">LinguaAI</span> -->
+                        <a href="index.html" class="text-2xl font-bold hover:opacity-80 transition-opacity cursor-pointer">LinguaAI</a>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="p-4">
+            <div class="flex items-center rounded-xl px-4 py-2 shadow-sm" 
+                 :class="darkMode ? 'bg-gray-800 bg-opacity-70' : 'bg-white bg-opacity-70'">
+                <i class="fas fa-search" :class="darkMode ? 'text-purple-300' : 'text-purple-500'"></i>
+                <input 
+                    type="text" 
+                    id="search-input"
+                    placeholder="Search translations..." 
+                    class="bg-transparent border-none outline-none ml-2 w-full text-sm focus:ring-0"
+                    :class="darkMode ? 'text-white placeholder-gray-400' : ''"
+                    @keydown.enter="performSearch()"
+                >
+                <button id="clear-search" class="p-1 rounded hover:bg-gray-200 transition-colors hidden" 
+                        :class="darkMode ? 'hover:bg-gray-600 text-gray-400' : 'text-gray-500'"
+                        onclick="clearSearch()">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Previous Conversations -->
+        <div class="flex-1 overflow-y-auto p-4" :class="darkMode ? 'dark-scrollbar' : ''">
+            <h2 class="text-sm font-semibold mb-4 uppercase tracking-wider" 
+                :class="darkMode ? 'text-purple-300' : 'text-purple-600'">Recent Translations</h2>
+            <div id="sidebar-loading" class="flex items-center justify-center py-8 hidden">
+                <div class="loading-spinner"></div>
+                <span class="ml-2 text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Loading...</span>
+            </div>
+            <div id="conversations-list" class="space-y-3">
+                <!-- Conversation items will be loaded dynamically -->
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="p-4 border-t" :class="darkMode ? 'border-gray-700' : 'border-gray-100'">
+            <button id="new-translation-sidebar" class="w-full py-2 px-4 gradient-bg text-white rounded-xl flex items-center justify-center space-x-2 btn-primary transition-all">
+                <i class="fas fa-plus-circle"></i>
+                <span>New Translation</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="flex-1 flex flex-col h-full hidden">
+        <!-- Header -->
+        <header class="z-10 border-b" 
+                :class="darkMode ? 'dark-glass-effect border-gray-700' : 'glass-effect border-gray-100'">
+            <!-- Navigation Bar -->
+            <nav class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <!-- Left: Title & Breadcrumbs -->
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-xl font-semibold">Translation Studio</h1>
+                        <div class="hidden md:flex items-center space-x-2 text-sm" 
+                             :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                            <a href="index.html" class="transition-all" 
+                               :class="darkMode ? 'hover:text-purple-300' : 'hover:text-purple-600'">Home</a>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                            <span :class="darkMode ? 'text-purple-300' : 'text-purple-600'">Translate</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-6">
+                        <!-- Theme Toggle -->
+                        <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="p-2 rounded-full transition-all" 
+                                :class="darkMode ? 'hover:bg-gray-700 text-yellow-300' : 'hover:bg-gray-100 text-gray-600'">
+                            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                        </button>
+                        
+                        <!-- Notification Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="p-2 rounded-full transition-all relative" 
+                                    :class="darkMode ? 'hover:bg-gray-700 text-gray-300 hover:text-purple-300' : 'hover:bg-gray-100 text-gray-600 hover:text-purple-600'">
+                                <i class="fas fa-bell"></i>
+                                <span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" 
+                                 @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-80 rounded-xl shadow-lg z-50"
+                                 :class="darkMode ? 'bg-slate-800 border border-gray-700' : 'bg-white border border-gray-200'"
+                                 style="display: none;">
+                                <div class="p-3 border-b" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-sm font-semibold">Notifications</h3>
+                                        <span class="text-xs px-2 py-1 rounded-full" :class="darkMode ? 'bg-gray-700' : 'bg-purple-100'">2 new</span>
+                                    </div>
+                                </div>
+                                <div class="max-h-60 overflow-y-auto">
+                                    <a href="#" class="block p-3 hover:bg-opacity-80 border-b transition-colors" 
+                                       :class="darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-purple-50'">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mr-3">
+                                                <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium">Translation completed</p>
+                                                <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Your marketing document has been translated to Spanish</p>
+                                                <p class="text-xs mt-1" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">10 minutes ago</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    
+                                    <a href="#" class="block p-3 hover:bg-opacity-80 transition-colors" 
+                                       :class="darkMode ? 'hover:bg-gray-700' : 'hover:bg-purple-50'">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mr-3">
+                                                <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium">Subscription expiring</p>
+                                                <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Your premium plan will expire in 3 days</p>
+                                                <p class="text-xs mt-1" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">1 day ago</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="p-2 text-center border-t" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+                                    <a href="#" class="text-xs font-medium text-purple-600 hover:text-purple-800 transition-colors">View all notifications</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Dropdown -->
+                        <div class="relative" x-data="{ profileOpen: false }">
+                            <button @click="profileOpen = !profileOpen" class="w-10 h-10 rounded-full overflow-hidden border-2 transition-all" 
+                                    :class="darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-purple-100 hover:border-purple-300'">
+                                <img 
+                                    :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('user') || 'User')}&background=7c3aed&color=fff`" 
+                                    alt="Profile"
+                                    class="w-full h-full object-cover"
+                                >
+                            </button>
+                            
+                            <!-- Profile Dropdown Menu -->
+                            <div x-show="profileOpen" 
+                                 @click.away="profileOpen = false"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-64 rounded-xl shadow-lg z-50"
+                                 :class="darkMode ? 'bg-slate-800 border border-gray-700' : 'bg-white border border-gray-200'"
+                                 style="display: none;">
+                                
+                                <!-- Profile Header -->
+                                <div class="p-4 border-b" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+                                    <div class="flex items-center">
+                                        <div class="mr-3">
+                                            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('user') || 'User')}&background=7c3aed&color=fff`" 
+                                                 class="w-12 h-12 rounded-full border-2"
+                                                 :class="darkMode ? 'border-gray-700' : 'border-purple-100'"
+                                                 :alt="localStorage.getItem('user') || 'User'">
+                                        </div>
+                                        <div>
+                                            <p class="font-medium" x-text="localStorage.getItem('user') || 'User'"></p>
+                                            <!-- <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">user@example.com</p> -->
+                                            <span class="text-xs px-2 py-0.5 rounded-full mt-1 inline-block gradient-bg text-white">Premium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Menu Items -->
+                                <div>
+                        
+                                    <a href="profile.html" class="flex items-center px-4 py-3 hover:bg-opacity-80 border-b transition-colors"
+                                       :class="darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-purple-50'">
+                                        <i class="fas fa-cog w-5 text-center" :class="darkMode ? 'text-gray-400' : 'text-purple-500'"></i>
+                                        <span class="ml-3 text-sm">Account Settings</span>
+                                    </a>
+                                   
+                                    <a href="#" @click="logout()" class="flex items-center px-4 py-3 hover:bg-opacity-80 transition-colors"
+                                       :class="darkMode ? 'hover:bg-gray-700' : 'hover:bg-purple-50'">
+                                        <i class="fas fa-sign-out-alt w-5 text-center" :class="darkMode ? 'text-gray-400' : 'text-purple-500'"></i>
+                                        <span class="ml-3 text-sm">Sign Out</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Translation Area -->
+        <main class="flex-1 overflow-y-auto p-6">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- Language Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-language"></i>
+                            </div>
+                            <label class="block text-sm font-medium">Source Language</label>
+                        </div>
+                        <select id="source-language" class="w-full p-3 border rounded-xl input-focus outline-none" 
+                                :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white bg-opacity-70 border-gray-200'">
+                            <option>English</option>
+                            <!-- <option>Spanish</option>
+                            <option>French</option> -->
+                        </select>
+                    </div>
+                    <div class="p-6 rounded-2xl card" 
+                         :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <label class="block text-sm font-medium">Target Language</label>
+                        </div>
+                        <select id="target-language-select" class="w-full p-3 border rounded-xl input-focus outline-none" 
+                                :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white bg-opacity-70 border-gray-200'">
+                            <option value="">Select a language</option>
+                            <option>Spanish</option>
+                            <option>German</option>
+                            <option>French</option>
+                            <option>Italian</option>
+                            <option>Portuguese</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Country Selection -->
+                <div class="p-6 rounded-2xl card" 
+                     :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <label class="block text-sm font-medium">Target Region</label>
+                    </div>
+                    <div class="relative">
+                        <select id="target-region" class="w-full p-3 border rounded-xl input-focus outline-none appearance-none" 
+                                :class="darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white bg-opacity-70 border-gray-200'">
+                            <option value="">Select a region</option>
+                            <option>United States</option>
+                            <option>Canada</option>
+                            <option>Italy</option>
+                            <option>Spain</option>
+                            <option>Mexico</option>
+                            <option>France</option>
+                            <option>Germany</option>
+                            <option>Switzerland</option>
+                            <option>Brazil</option>
+                            <option>Portugal</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                            <i class="fas fa-chevron-down" :class="darkMode ? 'text-purple-300' : 'text-purple-500'"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Brand Context -->
+                <div class="p-6 rounded-2xl card" 
+                     :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <label class="block text-sm font-medium">Brand Context</label>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button id="load-brand-context" class="px-4 py-2 border rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-all" 
+                                    :class="darkMode ? 'bg-gray-800 border-gray-600 text-white hover:border-purple-400' : 'bg-white border-gray-300 hover:border-purple-400'">
+                                Load Saved
+                            </button>
+                            <button id="clear-brand-context" class="px-4 py-2 border rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-all" 
+                                    :class="darkMode ? 'bg-gray-800 border-gray-600 text-white hover:border-red-400' : 'bg-white border-gray-300 hover:border-red-400'">
+                                Clear
+                            </button>
+                            <button id="save-brand-context" class="px-4 py-2 gradient-bg text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-all transform hover:scale-105" title="Save current context">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="brand-context"
+                        class="w-full h-32 p-4 border rounded-xl input-focus outline-none resize-none"
+                        placeholder="Enter brand guidelines, tone, style preferences... (Max 500 words)"
+                        :class="darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' : 'bg-white bg-opacity-70 border-gray-200'"
+                        maxlength="3000"
+                    ></textarea>
+                    
+                    <!-- File Upload Section -->
+                    <div class="mt-4 p-3 border-2 border-dashed rounded-xl transition-colors" 
+                         :class="darkMode ? 'border-gray-600 hover:border-purple-400' : 'border-gray-300 hover:border-purple-400'">
+                        <input type="file" id="brand-file-upload" class="hidden" accept=".txt,.doc,.docx" multiple>
+                        <div class="text-center cursor-pointer" onclick="document.getElementById('brand-file-upload').click()">
+                            <i class="fas fa-cloud-upload-alt text-2xl mb-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>
+                            <p class="text-sm" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Click to upload brand files</p>
+                            <p class="text-xs mt-1" :class="darkMode ? 'text-gray-500' : 'text-gray-500'">Max 2 files, 2MB each • TXT, DOC, DOCX only</p>
+                        </div>
+                        <div id="uploaded-files" class="mt-3 space-y-2 hidden"></div>
+                    </div>
+                    
+                    <div class="flex justify-between mt-2 text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                        <span id="brand-word-count">0/500 words</span>
+                        <span id="file-count">0 files</span>
+                    </div>
+                </div>
+
+                <!-- Translation Input -->
+                <div class="p-6 rounded-2xl card" 
+                     :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                            <i class="fas fa-pen"></i>
+                        </div>
+                        <label class="block text-sm font-medium">Text to Translate</label>
+                    </div>
+                    <textarea 
+                        id="translation-text"
+                        class="w-full h-32 p-4 border rounded-xl input-focus outline-none resize-none"
+                        placeholder="Enter your text here... (Max 1500 words)"
+                        :class="darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' : 'bg-white bg-opacity-70 border-gray-200'"
+                        maxlength="9000"
+                    ></textarea>
+                    <div class="flex justify-between mt-2 text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                        <span id="word-count">0/1500 words</span>
+                        <!-- <span>Supports markdown formatting</span> -->
+                    </div>
+                </div>
+
+                <!-- Translation Results (Hidden by default) -->
+                <div id="translation-results" class="p-6 rounded-2xl card hidden" 
+                     :class="darkMode ? 'dark-glass-effect' : 'glass-effect'">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white">
+                                <i class="fas fa-language"></i>
+                            </div>
+                            <h3 class="text-lg font-medium">Translation Results</h3>
+                        </div>
+                        <button id="close-results" class="p-2 rounded-full hover:bg-gray-100 transition-all" 
+                                :class="darkMode ? 'hover:bg-gray-700 text-gray-300' : 'text-gray-600'">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Original Text -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Original Text (English)</h4>
+                        <div class="p-3 rounded-lg border" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
+                            <p id="original-text" style="white-space: pre-wrap;"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Translation Outputs Container -->
+                    <div id="translation-outputs" class="space-y-4">
+                        <!-- Translation outputs will be dynamically added here -->
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="translate-btn" class="w-full gradient-bg text-white py-4 px-6 rounded-xl font-medium btn-primary flex items-center justify-center space-x-2">
+                    <span>Translate Now</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                
+                <!-- Regenerate Button (Hidden by default) -->
+                <button id="regenerate-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-6 rounded-xl font-medium btn-primary flex items-center justify-center space-x-2 hidden">
+                    <span>Regenerate</span>
+                    <i class="fas fa-redo"></i>
+                </button>
+
+                <script>
+                // Word count functionality
+                function countWords(text) {
+                    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+                }
+                
+                document.getElementById('brand-context').addEventListener('input', function() {
+                    const words = countWords(this.value);
+                    const counter = document.getElementById('brand-word-count');
+                    counter.textContent = words + '/500 words';
+                    counter.style.color = words > 500 ? '#ef4444' : '';
+                    
+                    if (words > 500) {
+                        const wordArray = this.value.trim().split(/\s+/);
+                        this.value = wordArray.slice(0, 500).join(' ');
+                        counter.textContent = '500/500 words';
+                        counter.style.color = '#ef4444';
+                    }
+                });
+                
+                document.getElementById('translation-text').addEventListener('input', function() {
+                    const words = countWords(this.value);
+                    const counter = document.getElementById('word-count');
+                    counter.textContent = words + '/1500 words';
+                    counter.style.color = words > 1500 ? '#ef4444' : '';
+                    
+                    if (words > 1500) {
+                        const wordArray = this.value.trim().split(/\s+/);
+                        this.value = wordArray.slice(0, 1500).join(' ');
+                        counter.textContent = '1500/1500 words';
+                        counter.style.color = '#ef4444';
+                    }
+                });
+                
+                // File upload functionality
+                let uploadedFiles = [];
+                const MAX_FILES = 2;
+                const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+                const ALLOWED_TYPES = ['.txt', '.doc', '.docx'];
+                
+                // Brand context management
+                async function showBrandContextPopup() {
+                    const isDark = document.body.classList.contains('bg-slate-900');
+                    
+                    // Show loading popup
+                    const overlay = document.createElement('div');
+                    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    overlay.innerHTML = `
+                        <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl max-h-[80vh] overflow-hidden animate-fade" style="background: ${isDark ? '#1e293b' : 'white'}; color: ${isDark ? 'white' : 'black'}; border: 1px solid ${isDark ? '#374151' : '#e5e7eb'}">
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-full gradient-bg flex items-center justify-center mx-auto mb-4">
+                                    <div class="loading-spinner" style="border-color: white; border-top-color: transparent; width: 24px; height: 24px"></div>
+                                </div>
+                                <h3 class="font-semibold mb-2">Loading Brand Contexts</h3>
+                                <p class="text-sm opacity-70">Please wait while we fetch your saved contexts...</p>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                    
+                    try {
+                        // Fetch and cache brand contexts
+                        const saved = await fetchAndCacheBrandContexts();
+                        
+                        const itemsHtml = saved.map(item => `
+                            <div class="group flex items-center justify-between p-4 rounded-xl border transition-all hover:shadow-md  brand-context-item" style="background: ${isDark ? '#374151' : 'white'}; border-color: ${isDark ? '#4b5563' : '#e5e7eb'}; color: ${isDark ? 'white' : 'black'}; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;">
+                                <div class="flex items-center space-x-3 flex-1 cursor-pointer" onclick="loadBrandContext('${item.id}')">
+                                    <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white flex-shrink-0">
+                                        <i class="fas fa-file-alt text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-semibold text-sm truncate">${item.name}</h4>
+                                        <p class="text-xs opacity-60 mt-1">Created ${new Date(item.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <button onclick="deleteBrandContext('${item.id}')" class="ml-3 p-2 rounded-full transition-all opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:scale-110" style="color: #ef4444">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        `).join('');
+                        
+                        // Update popup with results
+                        overlay.innerHTML = `
+                            <div class="bg-white rounded-3xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[80vh] overflow-hidden animate-fade" style="background: ${isDark ? '#1e293b' : 'white'}; color: ${isDark ? 'white' : 'black'}; border: 1px solid ${isDark ? '#374151' : '#e5e7eb'}">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white">
+                                            <i class="fas fa-folder-open text-sm"></i>
+                                        </div>
+                                        <h3 class="text-xl font-bold">Brand Contexts</h3>
+                                    </div>
+                                    <button onclick="closeBrandContextPopup()" class="p-2 rounded-full transition-all hover:bg-gray-100 hover:scale-110" style="background: ${isDark ? '#374151' : '#f3f4f6'}">
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                </div>
+                                <div class="space-y-3 h-80 w-full overflow-y-auto pr-2" style="scrollbar-width: thin">
+                                    ${itemsHtml || `<div class="text-center py-12"><div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: ${isDark ? '#374151' : '#f3f4f6'}"><i class="fas fa-inbox text-2xl" style="color: ${isDark ? '#9ca3af' : '#6b7280'}"></i></div><p class="text-gray-500 font-medium">No saved contexts</p><p class="text-xs text-gray-400 mt-1">Create your first brand context</p></div>`}
+                                </div>
+                            </div>
+                        `;
+                        
+                        overlay.onclick = (e) => { if (e.target === overlay) closeBrandContextPopup(); };
+                    } catch (error) {
+                        console.error('Failed to load brand contexts:', error);
+                        overlay.innerHTML = `
+                            <div class="bg-white rounded-3xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[80vh] overflow-hidden animate-fade" style="background: ${isDark ? '#1e293b' : 'white'}; color: ${isDark ? 'white' : 'black'}; border: 1px solid ${isDark ? '#374151' : '#e5e7eb'}">
+                                <div class="text-center">
+                                    <p class="text-sm text-red-500 mb-4">Failed to load brand contexts</p>
+                                    <button onclick="document.body.removeChild(this.closest('.fixed'))" class="px-4 py-2 gradient-bg text-white rounded-xl text-sm">Close</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+
+                
+                // Toast notification function
+                function showToast(message, type = 'success') {
+                    // Remove any existing toasts
+                    const existingToast = document.querySelector('.toast-notification');
+                    if (existingToast) {
+                        document.body.removeChild(existingToast);
+                    }
+                    
+                    // Create new toast
+                    const toast = document.createElement('div');
+                    toast.className = `toast-notification ${type}`;
+                    
+                    // Add icon based on type
+                    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                    toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+                    
+                    // Add to body
+                    document.body.appendChild(toast);
+                    
+                    // Show toast with animation
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    
+                    // Auto hide after 3 seconds
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                document.body.removeChild(toast);
+                            }
+                        }, 300);
+                    }, 3000);
+                }
+                
+                function saveBrandContext() {
+                    const brandText = document.getElementById('brand-context').value.trim();
+                    if (!brandText && uploadedFiles.length === 0) {
+                        showToast('Please add brand context first', 'error');
+                        return;
+                    }
+                    
+                    showCustomPrompt('Save Brand Context', 'Enter a name for this brand context:', (name) => {
+                        if (!name) return;
+                        saveBrandContextWithName(name);
+                    });
+                }
+                
+                async function saveBrandContextWithName(name) {
+                    const brandText = document.getElementById('brand-context').value.trim();
+                    
+                    // Check for duplicate names using cached data
+                    try {
+                        // Get saved contexts from localStorage if available
+                        const savedContextsStr = localStorage.getItem('brandContexts');
+                        if (savedContextsStr) {
+                            const savedContexts = JSON.parse(savedContextsStr);
+                            if (savedContexts.some(context => context.name.toLowerCase() === name.toLowerCase())) {
+                                showToast('A brand context with this name already exists', 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Convert files to base64 (only for actual File objects)
+                        const fileData = await Promise.all(uploadedFiles.filter(f => f instanceof File).map(async (f) => {
+                            const content = await fileToBase64(f);
+                            return {
+                                name: f.name,
+                                size: f.size,
+                                type: f.type,
+                                content: content.split(',')[1] // Remove data:type;base64, prefix
+                            };
+                        }));
+                        
+                        // Helper function to convert file to base64
+                        function fileToBase64(file) {
+                            return new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.readAsDataURL(file);
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = error => reject(error);
+                            });
+                        }
+                        
+                        const response = await fetch('YOUR_API_ENDPOINT/brand-context/save-brand', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                            },
+                            body: JSON.stringify({
+                                name: name,
+                                text: brandText,
+                                files: fileData,
+                                username: localStorage.getItem('user') || 'User'
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            showToast('Brand context saved successfully!', 'success');
+                            
+                            // Update the cached brand contexts
+                            fetchAndCacheBrandContexts();
+                        } else {
+                            throw new Error('Save failed');
+                        }
+                    } catch (error) {
+                        console.error('Failed to save brand context:', error);
+                        showToast('Failed to save brand context', 'error');
+                    }
+                }
+                
+                // Function to fetch and cache brand contexts
+                async function fetchAndCacheBrandContexts() {
+                    try {
+                        const username = localStorage.getItem('user') || 'User';
+                        const response = await fetch(`YOUR_API_ENDPOINT/brand-context/get-brand-list?username=${username}`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                        });
+                        const contexts = await response.json();
+                        localStorage.setItem('brandContexts', JSON.stringify(contexts));
+                        return contexts;
+                    } catch (error) {
+                        console.error('Failed to fetch brand contexts:', error);
+                        return [];
+                    }
+                }
+                
+                
+                function showCustomPrompt(title, message, callback) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    const isDark = document.body.classList.contains('bg-slate-900');
+                    
+                    overlay.innerHTML = `
+                        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[80vh] overflow-hidden animate-fade" style="background: ${isDark ? '#1e293b' : 'white'}; color: ${isDark ? 'white' : 'black'}; border: 1px solid ${isDark ? '#374151' : '#e5e7eb'}">
+                            <h3 class="text-lg font-semibold mb-4">${title}</h3>
+                            <p class="text-sm mb-4 opacity-80">${message}</p>
+                            <input type="text" id="prompt-input" class="w-full p-3 border rounded-xl outline-none mb-4" placeholder="Enter name..." style="background: ${isDark ? '#374151' : 'white'}; border-color: ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? 'white' : 'black'}">
+                            <div class="flex space-x-3">
+                                <button id="prompt-cancel" class="flex-1 px-4 py-2 border rounded-xl hover:bg-gray-50 transition-colors" style="border-color: ${isDark ? '#4b5563' : '#d1d5db'}">Cancel</button>
+                                <button id="prompt-ok" class="flex-1 px-4 py-2 gradient-bg text-white rounded-xl hover:opacity-90 transition-opacity">Save</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(overlay);
+                    const input = overlay.querySelector('#prompt-input');
+                    input.focus();
+                    
+                    overlay.querySelector('#prompt-ok').onclick = () => {
+                        callback(input.value.trim());
+                        document.body.removeChild(overlay);
+                    };
+                    
+                    overlay.querySelector('#prompt-cancel').onclick = () => document.body.removeChild(overlay);
+                    overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
+                    input.onkeydown = (e) => { if (e.key === 'Enter') overlay.querySelector('#prompt-ok').click(); };
+                }
+                
+
+                
+                async function loadBrandContext(contextId) {
+                    // Find and highlight the clicked context item
+                    const contextItems = document.querySelectorAll('.group.flex.items-center.justify-between');
+                    contextItems.forEach(item => {
+                        // Remove highlight from all items
+                        item.style.transform = '';
+                        item.style.boxShadow = '';
+                        item.style.borderColor = '';
+                        
+                        // Find the item that matches the contextId and highlight it
+                        const clickableDiv = item.querySelector(`[onclick="loadBrandContext('${contextId}')"]`);
+                        if (clickableDiv) {
+                            const isDark = document.body.classList.contains('bg-slate-900');
+                            item.style.transform = 'scale(1.02)';
+                            item.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.2)';
+                            item.style.borderColor = isDark ? '#7c3aed' : '#8b5cf6';
+                            
+                            // Add loading spinner to this item
+                            const iconContainer = clickableDiv.querySelector('.w-10.h-10.rounded-full');
+                            const originalIcon = iconContainer.innerHTML;
+                            iconContainer.innerHTML = `<div class="loading-spinner" style="border-color: white; border-top-color: transparent; width: 16px; height: 16px"></div>`;
+                            
+                            // Disable all items while loading
+                            contextItems.forEach(i => {
+                                const clickDiv = i.querySelector('div.flex.items-center.space-x-3.flex-1.cursor-pointer');
+                                if (clickDiv) clickDiv.style.pointerEvents = 'none';
+                            });
+                        }
+                    });
+                    
+                    try {
+                        const response = await fetch(`YOUR_API_ENDPOINT/brand-context/get-specific-brand?id=${contextId}`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                        });
+                        const context = await response.json();
+                        document.getElementById('brand-context').value = context.text || '';
+                        document.getElementById('brand-word-count').textContent = countWords(context.text || '') + '/500 words';
+                        
+
+                        
+                        // Convert S3 files to File objects for upload field
+                        uploadedFiles = [];
+                        if (context.files && context.files.length > 0) {
+                            for (const fileInfo of context.files) {
+                                if (fileInfo.content) {
+                                    try {
+                                        // Convert base64 back to File object
+                                        const byteCharacters = atob(fileInfo.content);
+                                        const byteNumbers = new Array(byteCharacters.length);
+                                        for (let i = 0; i < byteCharacters.length; i++) {
+                                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                        }
+                                        const byteArray = new Uint8Array(byteNumbers);
+                                        const file = new File([byteArray], fileInfo.name, {
+                                            type: fileInfo.type || 'text/plain'
+                                        });
+                                        uploadedFiles.push(file);
+                                    } catch (error) {
+                                        console.error('Error converting file:', error);
+                                        // Fallback to mock file if conversion fails
+                                        const mockFile = {
+                                            name: fileInfo.name,
+                                            size: fileInfo.size || 0,
+                                            type: fileInfo.type || 'text/plain'
+                                        };
+                                        uploadedFiles.push(mockFile);
+                                    }
+                                }
+                            }
+                        }
+                        displayUploadedFiles();
+                        updateFileCount();
+                        
+                        // Close popup
+                        closeBrandContextPopup();
+                    } catch (error) {
+                        console.error('Failed to load brand context:', error);
+                        // Re-enable items in case of error
+                        contextItems.forEach(i => {
+                            const clickDiv = i.querySelector('div.flex.items-center.space-x-3.flex-1.cursor-pointer');
+                            if (clickDiv) clickDiv.style.pointerEvents = 'auto';
+                        });
+                    }
+                }
+                
+                async function deleteBrandContext(contextId) {
+                    if (!confirm('Are you sure you want to delete this brand context?')) return;
+                    
+                    try {
+                        const response = await fetch(`YOUR_API_ENDPOINT/brand-context/delete-brand?id=${contextId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+                        });
+                        
+                        if (response.ok) {
+                            // Show success notification
+                            showToast('Brand context deleted successfully', 'success');
+                            
+                            // Refresh popup instead of closing it
+                            closeBrandContextPopup();
+                            showBrandContextPopup();
+                        } else {
+                            showToast('Failed to delete brand context', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to delete brand context:', error);
+                        showToast('Failed to delete brand context', 'error');
+                    }
+                }
+                
+                
+                // Helper function to close brand context popup
+                function closeBrandContextPopup() {
+                    const popup = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+                    if (popup) {
+                        document.body.removeChild(popup);
+                    }
+                }
+                
+                // Brand context button handlers
+                document.getElementById('load-brand-context').addEventListener('click', showBrandContextPopup);
+                document.getElementById('clear-brand-context').addEventListener('click', function() {
+                    document.getElementById('brand-context').value = '';
+                    document.getElementById('brand-word-count').textContent = '0/500 words';
+                    uploadedFiles = [];
+                    displayUploadedFiles();
+                    updateFileCount();
+
+                });
+                document.getElementById('save-brand-context').addEventListener('click', saveBrandContext);
+                
+                document.getElementById('brand-file-upload').addEventListener('change', function(e) {
+                    const files = Array.from(e.target.files);
+                    const validFiles = [];
+                    
+                    for (const file of files) {
+                        // Check file count
+                        if (uploadedFiles.length + validFiles.length >= MAX_FILES) {
+                            alert(`Maximum ${MAX_FILES} files allowed`);
+                            break;
+                        }
+                        
+                        // Check file size
+                        if (file.size > MAX_FILE_SIZE) {
+                            alert(`File "${file.name}" is too large. Maximum size is 2MB.`);
+                            continue;
+                        }
+                        
+                        // Check file type
+                        const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                        if (!ALLOWED_TYPES.includes(fileExt)) {
+                            alert(`File "${file.name}" is not supported. Only TXT, DOC, DOCX files allowed.`);
+                            continue;
+                        }
+                        
+                        validFiles.push(file);
+                    }
+                    
+                    uploadedFiles = [...uploadedFiles, ...validFiles];
+                    displayUploadedFiles();
+                    updateFileCount();
+                    
+                    // Clear input to allow re-selecting files
+                    this.value = '';
+                });
+                
+                function displayUploadedFiles() {
+                    const container = document.getElementById('uploaded-files');
+                    container.innerHTML = '';
+                    const isDark = document.body.classList.contains('bg-slate-900');
+                    
+                    if (uploadedFiles.length > 0) {
+                        container.classList.remove('hidden');
+                        container.className = 'mt-3 space-y-2 max-h-80 overflow-y-auto pr-2';
+                        container.style.scrollbarWidth = 'thin';
+                        
+                        uploadedFiles.forEach((file, index) => {
+                            const fileDiv = document.createElement('div');
+                            fileDiv.className = 'flex items-center justify-between p-2 rounded-lg';
+                            fileDiv.setAttribute('x-data', '{}');
+                            fileDiv.setAttribute(':class', 'darkMode ? "bg-gray-700" : "bg-gray-100"');
+                            
+                            fileDiv.innerHTML = `
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-file text-sm" :class="darkMode ? 'text-purple-400' : 'text-purple-600'"></i>
+                                    <span class="text-sm truncate" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">${file.name}</span>
+                                    <span class="text-xs" :class="darkMode ? 'text-gray-500' : 'text-gray-500'">(${formatFileSize(file.size)})</span>
+                                </div>
+                                <button onclick="removeFile(${index})" class="p-1 rounded hover:bg-red-100 transition-colors" :class="darkMode ? 'hover:bg-red-900 text-red-400' : 'text-red-500'">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            `;
+                            container.appendChild(fileDiv);
+                        });
+                    } else {
+                        container.classList.add('hidden');
+                        // Add empty state with same dimensions as the brand context list
+                        container.className = 'mt-3 space-y-2 max-h-80 overflow-y-auto pr-2 hidden';
+                        container.style.scrollbarWidth = 'thin';
+                    }
+                }
+                
+                function removeFile(index) {
+                    uploadedFiles.splice(index, 1);
+                    displayUploadedFiles();
+                    updateFileCount();
+                    // Clear the file input to allow re-uploading the same file
+                    document.getElementById('brand-file-upload').value = '';
+                    // Reset dropdown to "Load Saved" when files are removed
+                    document.getElementById('saved-brand-context').value = '';
+                }
+                
+                function updateFileCount() {
+                    const count = uploadedFiles.length;
+                    document.getElementById('file-count').textContent = count + (count === 1 ? ' file' : ' files');
+                }
+                
+                function formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+                }
+                
+                function displaySearchResults(results) {
+                    const conversationsList = document.getElementById('conversations-list');
+                    conversationsList.innerHTML = '';
+                    
+                    if (results.length === 0) {
+                        conversationsList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No results found</p>';
+                        return;
+                    }
+                    
+                    results.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'translation-item p-3 rounded-lg cursor-pointer transition-all';
+                        div.setAttribute('data-id', result.convoId);
+                        div.innerHTML = `
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-search text-purple-600 text-xs"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-medium text-sm truncate">${result.name}</h3>
+                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">${result.matching_translation.translationText}</p>
+                                    <span class="text-xs text-purple-600 mt-1 block">${new Date(result.timestamp).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        `;
+                        conversationsList.appendChild(div);
+                    });
+                    
+                    // Add click listeners to search results
+                    addConversationClickListeners();
+                }
+                
+                // Clear search results when input is empty
+                document.getElementById('search-input').addEventListener('input', function() {
+                    const clearBtn = document.getElementById('clear-search');
+                    if (this.value.trim() === '') {
+                        loadConversations(); // Reload all conversations
+                        clearBtn.classList.add('hidden');
+                    } else {
+                        clearBtn.classList.remove('hidden');
+                    }
+                });
+                
+                function clearSearch() {
+                    const searchInput = document.getElementById('search-input');
+                    const clearBtn = document.getElementById('clear-search');
+                    searchInput.value = '';
+                    clearBtn.classList.add('hidden');
+                    loadConversations(); // Reload all conversations
+                    resetForNewTranslation(); // Show new translation page
+                }
+                </script>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Login to LinguaAI</h2>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="Username" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <div class="relative">
+                    <input type="password" id="password" placeholder="Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="passwordToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button id="loginBtn" onclick="login()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="loginText">Login</span>
+                    <div id="loginSpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <button type="button" onclick="showSignup()" class="w-full border border-purple-300 text-purple-600 py-3 rounded-xl font-medium hover:bg-purple-50 transition-colors">
+                    Create Account
+                </button>
+            </div>
+            <div id="loginMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+    
+    <!-- Signup Form -->
+    <div id="signupForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Create Account</h2>
+            <div class="space-y-4">
+                <input type="text" id="signupName" placeholder="Full Name" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <input type="email" id="signupEmail" placeholder="Email" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <input type="text" id="signupUsername" placeholder="Username" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <div class="relative">
+                    <input type="password" id="signupPassword" placeholder="Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="toggleSignupPassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="signupPasswordToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="password" id="signupPasswordConfirm" placeholder="Confirm Password" class="w-full p-3 pr-12 border rounded-xl input-focus outline-none text-gray-900">
+                    <button type="button" onclick="toggleSignupPasswordConfirm()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <i id="signupPasswordConfirmToggleIcon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button id="signupBtn" onclick="signup()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="signupText">Create Account</span>
+                    <div id="signupSpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <button type="button" onclick="showLogin()" class="w-full border border-gray-300 text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                    Back to Login
+                </button>
+            </div>
+            <div id="signupMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+
+    <!-- Verification Form -->
+    <div id="verifyForm" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 gradient-bg bg-clip-text text-transparent">Verify Email</h2>
+            <p class="text-center text-gray-600 mb-6">Enter the verification code sent to your email</p>
+            <div class="space-y-4">
+                <input type="text" id="verifyCode" placeholder="Verification Code" class="w-full p-3 border rounded-xl input-focus outline-none text-gray-900">
+                <button id="verifyBtn" onclick="verifyEmail()" class="w-full gradient-bg text-white py-3 rounded-xl font-medium btn-primary flex items-center justify-center">
+                    <span id="verifyText">Verify</span>
+                    <div id="verifySpinner" class="loading-spinner ml-2 hidden"></div>
+                </button>
+                <div class="flex space-x-2">
+                    <button type="button" onclick="resendVerificationCode()" class="flex-1 border border-purple-300 text-purple-600 py-3 rounded-xl font-medium hover:bg-purple-50 transition-colors">
+                        <span id="resendText">Resend Code</span>
+                        <div id="resendSpinner" class="loading-spinner ml-2 hidden inline-block"></div>
+                    </button>
+                    <button type="button" onclick="showLogin()" class="flex-1 border border-gray-300 text-gray-600 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                        Back to Login
+                    </button>
+                </div>
+            </div>
+            <div id="verifyMessage" class="hidden p-3 rounded-lg mt-4 text-sm text-center"></div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 backdrop-blur-sm text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Cognito configuration
+        const poolData = {
+            UserPoolId: 'YOUR_USER_POOL_ID',
+            ClientId: 'YOUR_CLIENT_ID'
+        };
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+        
+        let currentUsername = '';
+        let currentPassword = '';
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('loginMessage');
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginText.textContent = 'Logging in...';
+            loginSpinner.classList.remove('hidden');
+            
+            if (!username || !password) {
+                // Reset loading state
+                loginBtn.disabled = false;
+                loginText.textContent = 'Login';
+                loginSpinner.classList.add('hidden');
+                
+                messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-red-100 text-red-700';
+                messageEl.textContent = 'Please enter both username and password';
+                messageEl.classList.remove('hidden');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                return;
+            }
+            
+            const authenticationData = {
+                Username: username,
+                Password: password
+            };
+            const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+            
+            const userData = {
+                Username: username,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: function(result) {
+                    localStorage.setItem('user', username);
+                    localStorage.setItem('accessToken', result.getAccessToken().getJwtToken());
+                    localStorage.setItem('idToken', result.getIdToken().getJwtToken());
+                    localStorage.setItem('refreshToken', result.getRefreshToken().getToken());
+                    
+                    messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-green-100 text-green-700';
+                    messageEl.textContent = 'Login successful!';
+                    messageEl.classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('loginForm').style.display = 'none';
+                        document.getElementById('loadingOverlay').style.display = 'flex';
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        setTimeout(() => {
+                            loadConversations();
+                            showLoggedIn();
+                            // Reload screen content after successful login
+                            location.reload();
+                        }, 0);
+                    }, 1000);
+                },
+                onFailure: function(err) {
+                    // Reset loading state
+                    loginBtn.disabled = false;
+                    loginText.textContent = 'Login';
+                    loginSpinner.classList.add('hidden');
+                    
+                    // Check if the error is due to user not being verified
+                    if (err.message && err.message.includes('not confirmed')) {
+                        // Save username for verification
+                        currentUsername = username;
+                        currentPassword = password;
+                        
+                        // Show verification form
+                        showVerify();
+                        
+                        // Show message in verification form
+                        const verifyMessageEl = document.getElementById('verifyMessage');
+                        showMessage(verifyMessageEl, 'Please verify your account to continue', 'error');
+                    } else {
+                        // Clear form fields for other errors
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        
+                        messageEl.className = 'p-3 rounded-lg mt-4 text-sm text-center bg-red-100 text-red-700';
+                        messageEl.textContent = err.message || 'Login failed';
+                        messageEl.classList.remove('hidden');
+                    }
+                }
+            });
+        }
+        
+        function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+            const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+            const messageEl = document.getElementById('signupMessage');
+            const signupBtn = document.getElementById('signupBtn');
+            const signupText = document.getElementById('signupText');
+            const signupSpinner = document.getElementById('signupSpinner');
+            
+            signupBtn.disabled = true;
+            signupText.textContent = 'Creating Account...';
+            signupSpinner.classList.remove('hidden');
+            
+            if (!name || !email || !username || !password || !passwordConfirm) {
+                showMessage(messageEl, 'Please fill in all fields', 'error');
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                showMessage(messageEl, 'Passwords do not match', 'error');
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                return;
+            }
+            
+            const attributeList = [
+                new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'email', Value: email }),
+                new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'name', Value: name })
+            ];
+            
+            userPool.signUp(username, password, attributeList, null, (err, result) => {
+                resetButton(signupBtn, signupText, signupSpinner, 'Create Account');
+                if (err) {
+                    showMessage(messageEl, err.message, 'error');
+                    return;
+                }
+                currentUsername = username;
+                currentPassword = password;
+                showVerify();
+            });
+        }
+        
+        function verifyEmail() {
+            const code = document.getElementById('verifyCode').value;
+            const messageEl = document.getElementById('verifyMessage');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const verifyText = document.getElementById('verifyText');
+            const verifySpinner = document.getElementById('verifySpinner');
+            
+            if (!code) {
+                showMessage(messageEl, 'Please enter verification code', 'error');
+                return;
+            }
+            
+            verifyBtn.disabled = true;
+            verifyText.textContent = 'Verifying...';
+            verifySpinner.classList.remove('hidden');
+            
+            const userData = {
+                Username: currentUsername,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.confirmRegistration(code, true, (err, result) => {
+                resetButton(verifyBtn, verifyText, verifySpinner, 'Verify');
+                if (err) {
+                    showMessage(messageEl, err.message, 'error');
+                    return;
+                }
+                
+                // Auto-login after verification
+                const authenticationData = {
+                    Username: currentUsername,
+                    Password: currentPassword
+                };
+                const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+                
+                cognitoUser.authenticateUser(authenticationDetails, {
+                    onSuccess: function(loginResult) {
+                        localStorage.setItem('user', currentUsername);
+                        localStorage.setItem('accessToken', loginResult.getAccessToken().getJwtToken());
+                        localStorage.setItem('idToken', loginResult.getIdToken().getJwtToken());
+                        localStorage.setItem('refreshToken', loginResult.getRefreshToken().getToken());
+                        
+                        showMessage(messageEl, 'Account verified and logged in!', 'success');
+                        
+                        // Only create user profile if this is from signup (not login)
+                        const isFromSignup = document.getElementById('signupEmail').value.trim() !== '';
+                        
+                        if (isFromSignup) {
+                            console.log('Creating user profile for new signup...');
+                            createUserProfile(currentUsername, document.getElementById('signupEmail').value, document.getElementById('signupName').value)
+                                .then(() => {
+                                    console.log('User profile creation completed');
+                                    setTimeout(() => {
+                                        document.getElementById('verifyForm').style.display = 'none';
+                                        clearSignupFields();
+                                        showLoggedIn();
+                                        loadConversations();
+                                        location.reload();
+                                    }, 1000);
+                                })
+                                .catch((error) => {
+                                    console.error('User profile creation failed:', error);
+                                    setTimeout(() => {
+                                        document.getElementById('verifyForm').style.display = 'none';
+                                        clearSignupFields();
+                                        showLoggedIn();
+                                        loadConversations();
+                                        location.reload();
+                                    }, 1000);
+                                });
+                        } else {
+                            console.log('Verification from login - skipping user profile creation');
+                            setTimeout(() => {
+                                document.getElementById('verifyForm').style.display = 'none';
+                                clearSignupFields();
+                                showLoggedIn();
+                                loadConversations();
+                                location.reload();
+                            }, 1000);
+                        }
+                    },
+                    onFailure: function(loginErr) {
+                        showMessage(messageEl, 'Verified but login failed. Please login manually.', 'error');
+                        setTimeout(() => showLogin(), 2000);
+                    }
+                });
+            });
+        }
+        
+        function resendVerificationCode() {
+            const messageEl = document.getElementById('verifyMessage');
+            const resendText = document.getElementById('resendText');
+            const resendSpinner = document.getElementById('resendSpinner');
+            
+            if (!currentUsername) {
+                showMessage(messageEl, 'Unable to resend code. Please go back to login.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            resendText.textContent = 'Sending...';
+            resendSpinner.classList.remove('hidden');
+            
+            const userData = {
+                Username: currentUsername,
+                Pool: userPool
+            };
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            cognitoUser.resendConfirmationCode((err, result) => {
+                // Reset button state
+                resendText.textContent = 'Resend Code';
+                resendSpinner.classList.add('hidden');
+                
+                if (err) {
+                    showMessage(messageEl, err.message || 'Failed to resend code', 'error');
+                    return;
+                }
+                
+                showMessage(messageEl, 'Verification code has been resent to your email', 'success');
+            });
+        }
+        
+        function showSignup() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'flex';
+            // Clear any previous error messages
+            document.getElementById('signupMessage').classList.add('hidden');
+            clearSignupFields();
+        }
+        
+        function showVerify() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'flex';
+            // Clear any previous error messages
+            document.getElementById('verifyMessage').classList.add('hidden');
+        }
+        
+        function showMessage(element, message, type) {
+            element.className = `p-3 rounded-lg mt-4 text-sm text-center ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+        
+        function resetButton(btn, text, spinner, defaultText) {
+            btn.disabled = false;
+            text.textContent = defaultText;
+            spinner.classList.add('hidden');
+        }
+        
+        function clearSignupFields() {
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupPasswordConfirm').value = '';
+            document.getElementById('verifyCode').value = '';
+        }
+        
+        function logout() {
+            const cognitoUser = userPool.getCurrentUser();
+            if (cognitoUser) {
+                cognitoUser.signOut();
+            }
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('refreshToken');
+            // Clear all form fields and messages before showing login
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('signupMessage').classList.add('hidden');
+            document.getElementById('verifyMessage').classList.add('hidden');
+            clearSignupFields();
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            showLogin();
+        }
+        
+        function showLoggedIn() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('mainSidebar').classList.remove('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('verifyForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'flex';
+            document.getElementById('mainSidebar').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            // Clear any previous error messages
+            document.getElementById('loginMessage').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        // Check login status on load
+        function checkAuthStatus() {
+            const cognitoUser = userPool.getCurrentUser();
+            if (cognitoUser) {
+                cognitoUser.getSession((err, session) => {
+                    if (err || !session.isValid()) {
+                        showLogin();
+                    } else {
+                        loadConversations();
+                        showLoggedIn();
+                    }
+                });
+            } else {
+                showLogin();
+            }
+        }
+        checkAuthStatus();
+        // Listen for storage changes across tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'user') {
+                e.newValue ? showLoggedIn() : showLogin();
+            }
+            if (e.key === 'darkMode') {
+                location.reload();
+            }
+        });
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        function toggleSignupPassword() {
+            const passwordInput = document.getElementById('signupPassword');
+            const toggleIcon = document.getElementById('signupPasswordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        function toggleSignupPasswordConfirm() {
+            const passwordInput = document.getElementById('signupPasswordConfirm');
+            const toggleIcon = document.getElementById('signupPasswordConfirmToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Sign out function
+        function signOut() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+        
+        // Function to create user profile in DynamoDB
+        async function createUserProfile(username, email, name) {
+            console.log('Creating user profile for:', { username, email, name });
+            try {
+                const response = await fetch('YOUR_API_ENDPOINT/users/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        name: name
+                    })
+                });
+                
+                const responseText = await response.text();
+                console.log('Create user response:', response.status, responseText);
+                
+                if (!response.ok) {
+                    console.error('Failed to create user profile:', response.status, responseText);
+                } else {
+                    console.log('User profile created successfully');
+                }
+            } catch (error) {
+                console.error('Error creating user profile:', error);
+            }
+        }
+
+        let translationData = {};
+        let currentConvoId = null;
+        let translationCount = 0;
+        let currentConversationData = null;
+        
+        // Load conversations from DynamoDB
+        async function loadConversations() {
+                const sidebarLoading = document.getElementById('sidebar-loading');
+                const conversationsList = document.getElementById('conversations-list');
+                
+                sidebarLoading.classList.remove('hidden');
+                conversationsList.style.display = 'none';
+                
+                try {
+                    const username = localStorage.getItem('user') || 'User';
+                    const response = await fetch(`YOUR_API_ENDPOINT/translate/get-recent?user_name=${username}`);
+                    const conversations = await response.json();
+                    
+                    // Store conversations in localStorage for search functionality
+                    localStorage.setItem('conversations', JSON.stringify(conversations));
+                    
+                    conversationsList.innerHTML = '';
+                    
+                    conversations.forEach(conv => {
+                        translationData[conv.convoId] = {
+                            translations: conv.translations,
+                            name: conv.name
+                        };
+                        
+                        const timeAgo = getTimeAgo(conv.timestamp);
+                        const conversationDiv = document.createElement('div');
+                        conversationDiv.className = 'sidebar-item p-3 rounded-xl cursor-pointer shadow-sm translation-item';
+                        conversationDiv.setAttribute('data-id', conv.convoId);
+                        conversationDiv.setAttribute('x-data', '{}');
+                        conversationDiv.setAttribute(':class', '{ "hover:bg-gray-700": darkMode, "hover:bg-purple-50": !darkMode }');
+                        
+                        conversationDiv.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium" :class="darkMode ? 'text-white' : 'text-gray-900'">${conv.name}</span>
+                                <span class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">${timeAgo}</span>
+                            </div>
+                            <p class="text-xs mt-1" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">${conv.sourceLanguage} → ${conv.targetLanguage}</p>
+                        `;
+                        
+                        conversationsList.appendChild(conversationDiv);
+                    });
+                    
+                    // Add click listeners to new items
+                    addConversationClickListeners();
+                } catch (error) {
+                    console.error('Error loading conversations:', error);
+                } finally {
+                    sidebarLoading.classList.add('hidden');
+                    conversationsList.style.display = 'block';
+                }
+        }
+        
+        function addConversationClickListeners() {
+            document.querySelectorAll('.translation-item').forEach(item => {
+                item.addEventListener('click', async function() {
+                    // Remove active class from all items
+                    document.querySelectorAll('.translation-item').forEach(i => {
+                        i.classList.remove('active-conversation');
+                    });
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active-conversation');
+                    
+                    const convoId = this.getAttribute('data-id');
+                    
+                    // Show loading spinner and hide form
+                    showConversationLoading();
+                    
+                    try {
+                        // Fetch latest data for this conversation
+                        const response = await fetch(`YOUR_API_ENDPOINT/translate/get-conversation?convo_id=${convoId}`);
+                        const data = await response.json();
+                        
+                        if (data && data.translations.length > 0) {
+                            // Store conversation data for regeneration
+                            const hasFileContents = data.translations[0].fileContents && data.translations[0].fileContents.trim() !== '';
+                            currentConversationData = {
+                                sourceLanguage: data.translations[0].sourceLanguage,
+                                targetLanguage: data.translations[0].targetLanguage,
+                                targetRegion: data.translations[0].targetRegion,
+                                brandContext: data.translations[0].brandContext,
+                                translationText: data.translations[0].translationText,
+                                files: hasFileContents ? data.translations[0].fileContents : '',
+                                uploadedFiles: hasFileContents ? [] : [] // Will be populated from files if needed
+                            };
+                            currentConvoId = convoId;
+                            translationCount = data.translations.length;
+                            
+                            // Reset translation count for proper regeneration numbering
+                            let displayCount = 0;
+                            
+                            // Show original text from first translation
+                            document.getElementById('original-text').textContent = data.translations[0].translationText;
+                            
+                            // Clear and populate all translations
+                            const outputsContainer = document.getElementById('translation-outputs');
+                            outputsContainer.innerHTML = '';
+                            
+                            data.translations.forEach((translation, index) => {
+                                addTranslationOutput(translation, index + 1);
+                            });
+                            
+                            // Show the results section
+                            document.getElementById('translation-results').classList.remove('hidden');
+                            
+                            // Show regenerate button and hide translate button
+                            document.getElementById('regenerate-btn').classList.remove('hidden');
+                            document.getElementById('translate-btn').classList.add('hidden');
+                            
+                            // Hide the translation form sections
+                            document.querySelectorAll('main .card:not(#translation-results)').forEach(card => {
+                                card.classList.add('hidden');
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error fetching conversation data:', error);
+                    } finally {
+                        // Hide loading spinner
+                        hideConversationLoading();
+                    }
+                });
+            });
+        }
+        
+        function showConversationLoading() {
+            // Hide all form cards
+            document.querySelectorAll('main .card:not(#translation-results)').forEach(card => {
+                card.classList.add('hidden');
+            });
+            
+            // Hide results if visible
+            document.getElementById('translation-results').classList.add('hidden');
+            
+            // Hide buttons
+            document.getElementById('translate-btn').classList.add('hidden');
+            document.getElementById('regenerate-btn').classList.add('hidden');
+            
+            // Show loading spinner
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'conversation-loading';
+            loadingDiv.className = 'flex items-center justify-center py-20';
+            loadingDiv.setAttribute('x-data', '{}');
+            loadingDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="loading-spinner mx-auto mb-4"></div>
+                    <p class="text-sm" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Loading conversation...</p>
+                </div>
+            `;
+            
+            const mainContent = document.querySelector('main .max-w-4xl');
+            mainContent.appendChild(loadingDiv);
+        }
+        
+        function hideConversationLoading() {
+            const loadingDiv = document.getElementById('conversation-loading');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+        
+        function toggleSidebarItems(disabled) {
+            document.querySelectorAll('.translation-item').forEach(item => {
+                if (disabled) {
+                    item.style.pointerEvents = 'none';
+                    item.style.opacity = '0.5';
+                } else {
+                    item.style.pointerEvents = 'auto';
+                    item.style.opacity = '1';
+                }
+            });
+        }
+        
+        function addTranslationOutput(data, count) {
+            const outputsContainer = document.getElementById('translation-outputs');
+            const outputDiv = document.createElement('div');
+            
+            outputDiv.className = 'mb-6 p-4 rounded-xl';
+            outputDiv.setAttribute('x-data', '{}');
+            outputDiv.setAttribute(':class', 'darkMode ? "bg-purple-900 bg-opacity-20 border border-purple-700" : "bg-purple-50 border border-purple-200"');
+            
+            const title = count === 1 ? 'Translation' : `Regeneration #${count - 1}`;
+            
+            // Create copy buttons with proper data handling
+            const translatedBtn = document.createElement('button');
+            translatedBtn.className = 'p-1 rounded hover:bg-gray-200 transition-colors';
+            translatedBtn.setAttribute(':class', 'darkMode ? "hover:bg-gray-600 text-gray-400" : "text-gray-500"');
+            translatedBtn.innerHTML = '<i class="fas fa-copy text-xs"></i>';
+            translatedBtn.onclick = () => copyToClipboard(data.translated, translatedBtn);
+            
+            const reasonBtn = document.createElement('button');
+            reasonBtn.className = 'p-1 rounded hover:bg-gray-200 transition-colors';
+            reasonBtn.setAttribute(':class', 'darkMode ? "hover:bg-gray-600 text-gray-400" : "text-gray-500"');
+            reasonBtn.innerHTML = '<i class="fas fa-copy text-xs"></i>';
+            reasonBtn.onclick = () => copyToClipboard(data.reason, reasonBtn);
+            
+            const backTransBtn = document.createElement('button');
+            backTransBtn.className = 'p-1 rounded hover:bg-gray-200 transition-colors';
+            backTransBtn.setAttribute(':class', 'darkMode ? "hover:bg-gray-600 text-gray-400" : "text-gray-500"');
+            backTransBtn.innerHTML = '<i class="fas fa-copy text-xs"></i>';
+            backTransBtn.onclick = () => copyToClipboard(data.backTranslation, backTransBtn);
+            
+            outputDiv.innerHTML = `
+                <h4 class="text-sm font-semibold mb-3" :class="darkMode ? 'text-purple-400' : 'text-purple-600'">${title}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <h5 class="text-xs font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Translated Text</h5>
+                            <div class="copy-btn-translated"></div>
+                        </div>
+                        <div class="p-3 rounded-lg border" :class="darkMode ? 'bg-purple-900 bg-opacity-30 border-purple-700 text-white' : 'bg-purple-50 border-purple-200'">
+                            <p style="white-space: pre-wrap;">${data.translated.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <h5 class="text-xs font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Adaptation Reasoning</h5>
+                            <div class="copy-btn-reason"></div>
+                        </div>
+                        <div class="p-3 rounded-lg border" :class="darkMode ? 'bg-purple-900 bg-opacity-30 border-purple-700 text-white' : 'bg-purple-50 border-purple-200'">
+                            <p style="white-space: pre-wrap;">${data.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <h5 class="text-xs font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Back Translation</h5>
+                            <div class="copy-btn-back"></div>
+                        </div>
+                        <div class="p-3 rounded-lg border" :class="darkMode ? 'bg-purple-900 bg-opacity-30 border-purple-700 text-white' : 'bg-purple-50 border-purple-200'">
+                            <p style="white-space: pre-wrap;">${data.backTranslation.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append the copy buttons after innerHTML is set
+            outputDiv.querySelector('.copy-btn-translated').appendChild(translatedBtn);
+            outputDiv.querySelector('.copy-btn-reason').appendChild(reasonBtn);
+            outputDiv.querySelector('.copy-btn-back').appendChild(backTransBtn);
+            
+            outputsContainer.appendChild(outputDiv);
+        }
+        
+        function resetForNewTranslation() {
+            // Remove active state from all sidebar items
+            document.querySelectorAll('.translation-item').forEach(i => {
+                i.classList.remove('active-conversation');
+            });
+            
+            // Clear conversation ID and reset translation count
+            currentConvoId = null;
+            translationCount = 0;
+            currentConversationData = null;
+            
+            
+            // Clear form fields
+            document.getElementById('brand-context').value = '';
+            document.getElementById('translation-text').value = '';
+            const brandWordCount = document.getElementById('brand-word-count');
+            const wordCount = document.getElementById('word-count');
+            if (brandWordCount) brandWordCount.textContent = '0/500 words';
+            if (wordCount) wordCount.textContent = '0/1500 words';
+            
+            // Clear uploaded files
+            uploadedFiles = [];
+            displayUploadedFiles();
+            updateFileCount();
+            // Clear the file input to allow new uploads
+            const fileInput = document.getElementById('brand-file-upload');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            // Hide results and show form
+            document.getElementById('translation-results').classList.add('hidden');
+            document.getElementById('regenerate-btn').classList.add('hidden');
+            document.getElementById('translate-btn').classList.remove('hidden');
+            
+            // Show all form sections
+            document.querySelectorAll('main .card.hidden:not(#translation-results)').forEach(card => {
+                card.classList.remove('hidden');
+            });
+            
+            // Reset button text
+            const translateBtn = document.getElementById('translate-btn');
+            translateBtn.querySelector('span').textContent = 'Translate Now';
+            translateBtn.querySelector('i').className = 'fas fa-arrow-right';
+        }
+        
+        function getTimeAgo(timestamp) {
+                const now = new Date();
+                // Remove microseconds and add Z for UTC
+                const cleanTimestamp = timestamp.replace(/\.\d{6}$/, 'Z');
+                const past = new Date(cleanTimestamp);
+                
+                const diffMs = now - past;
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 0) return `${diffDays}d ago`;
+                if (diffHours > 0) return `${diffHours}h ago`;
+                if (diffMinutes > 0) return `${diffMinutes}m ago`;
+                return 'Just now';
+        }
+
+        // Add sidebar new translation button listener
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch and cache brand contexts on page load
+            fetchAndCacheBrandContexts();
+            
+            document.getElementById('new-translation-sidebar').addEventListener('click', function() {
+                resetForNewTranslation();
+            });
+            // Add smooth transitions and animations
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.add('animate-fade');
+                });
+            });
+
+            // File upload preview
+            const fileUpload = document.getElementById('file-upload');
+            if (fileUpload) {
+                fileUpload.addEventListener('change', function(e) {
+                    console.log('File selected:', e.target.files[0].name);
+                });
+            }
+
+       
+            const translationResults = document.getElementById('translation-results');
+            const closeResults = document.getElementById('close-results');
+            const originalText = document.getElementById('original-text');
+            const translateBtn = document.getElementById('translate-btn');
+            
+            
+            // Close results and show form again
+            closeResults.addEventListener('click', function() {
+                translationResults.classList.add('hidden');
+                document.getElementById('regenerate-btn').classList.add('hidden');
+                document.getElementById('translate-btn').classList.remove('hidden');
+                
+
+
+                document.getElementById('translation-outputs').innerHTML = '';
+                
+                // Clear all form fields
+                document.getElementById('brand-context').value = '';
+                document.getElementById('translation-text').value = '';
+                document.getElementById('target-language-select').value = '';
+                document.getElementById('target-region').value = '';
+                const brandWordCount = document.getElementById('brand-word-count');
+                const wordCount = document.getElementById('word-count');
+                if (brandWordCount) brandWordCount.textContent = '0/500 words';
+                if (wordCount) wordCount.textContent = '0/1500 words';
+                
+                // Clear uploaded files
+                uploadedFiles = [];
+                displayUploadedFiles();
+                updateFileCount();
+                document.getElementById('brand-file-upload').value = '';
+                
+                // Remove active state from sidebar items
+                document.querySelectorAll('.translation-item').forEach(i => {
+                    i.classList.remove('active-conversation');
+                });
+                
+                // Show the translation form sections
+                document.querySelectorAll('main .card.hidden:not(#translation-results)').forEach(card => {
+                    card.classList.remove('hidden');
+                });
+                
+                // Reset button text
+                translateBtn.querySelector('span').textContent = 'Translate Now';
+                translateBtn.querySelector('i').className = 'fas fa-arrow-right';
+            });
+            
+            // Lambda function call with file support
+            async function callLambdaTranslation(sourceLanguage, targetLanguage, targetRegion, brandContext, translationText, convoId = null, files = []) {
+                const fileArray = Array.isArray(files) ? files : [];
+                const hasFiles = fileArray.length > 0;
+                const isRegenerating = convoId !== null;
+                const hadFiles = isRegenerating && currentConversationData && 
+                    ((currentConversationData.files && String(currentConversationData.files).trim() !== '') ||
+                     (currentConversationData.uploadedFiles && currentConversationData.uploadedFiles.length > 0));
+                
+                const lambdaUrl = (hasFiles || hadFiles)
+                    ? 'YOUR_API_ENDPOINT/files'
+                    : 'YOUR_API_ENDPOINT/translate/get-bedrock';
+                
+                // Ensure brandContext is a string
+                const brandContextText = typeof brandContext === 'string' ? brandContext : String(brandContext || '');
+                
+                const payload = {
+                    sourceLanguage: sourceLanguage,
+                    targetLanguage: targetLanguage,
+                    targetRegion: targetRegion,
+                    brandContext: brandContextText,
+
+                    translationText: translationText,
+                    username: localStorage.getItem('user') || 'User'
+                };
+                
+                if (convoId) {
+                    payload.convoId = convoId;
+                    
+                    // If regenerating, get the last translation as previous example
+                    const outputsContainer = document.getElementById('translation-outputs');
+                    const lastOutput = outputsContainer.lastElementChild;
+                    if (lastOutput) {
+                        const lastTranslatedText = lastOutput.querySelector('div:first-child p')?.textContent;
+                        if (lastTranslatedText) {
+                            payload.previousTranslation = lastTranslatedText;
+                        }
+                    }
+                }
+                
+                if (hasFiles || hadFiles) {
+                    if (hasFiles) {
+                        const uploadedFiles = await Promise.all(files.filter(file => file instanceof File).map(async (file) => {
+                            const content = await fileToBase64(file);
+                            return {
+                                name: file.name,
+                                content: content.split(',')[1] // Remove data:type;base64, prefix
+                            };
+                        }));
+                        payload.uploadedFiles = uploadedFiles;
+                    } else if (hadFiles) {
+                        // For regeneration, we don't need to send files again as they're already stored
+                        // The file contents are already in the brand context from DynamoDB
+                        payload.uploadedFiles = [];
+                    }
+                }
+                
+                try {
+                    const response = await fetch(lambdaUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Check if the response indicates inappropriate content
+                    if (result.error === 'error') {
+                        throw new Error('INAPPROPRIATE_CONTENT');
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    console.error('Error calling Lambda function:', error);
+                    throw error;
+                }
+            }
+            
+            // Helper function to convert file to base64
+            function fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            }
+            
+
+            
+            // New translation button functionality
+            translateBtn.addEventListener('click', async function() {
+                if (this.querySelector('span').textContent === 'New Translation') {
+                    // Reset for new translation
+                    currentConvoId = null;
+                    translationCount = 0;
+                    currentBrandContextId = null; // Clear brand context ID
+                    document.getElementById('translation-outputs').innerHTML = '';
+                    document.getElementById('regenerate-btn').classList.add('hidden');
+                    closeResults.click();
+                } else {
+                    // Disable new translation button in sidebar
+                    const newTranslationBtn = document.getElementById('new-translation-sidebar');
+                    newTranslationBtn.disabled = true;
+                    newTranslationBtn.style.opacity = '0.6';
+                    newTranslationBtn.style.cursor = 'not-allowed';
+                    
+                    // Clear previous translations before new one
+                    document.getElementById('translation-outputs').innerHTML = '';
+                    translationCount = 0;
+                    await performTranslation();
+                    
+                    // Re-enable new translation button
+                    newTranslationBtn.disabled = false;
+                    newTranslationBtn.style.opacity = '';
+                    newTranslationBtn.style.cursor = '';
+                }
+            });
+            
+            // Regenerate button functionality
+            document.getElementById('regenerate-btn').addEventListener('click', async function() {
+                if (currentConversationData) {
+                    // Disable translate button during regeneration (even though it's hidden)
+                    const translateBtn = document.getElementById('translate-btn');
+                    translateBtn.disabled = true;
+                    
+                    await performTranslationWithData(
+                        currentConversationData.sourceLanguage,
+                        currentConversationData.targetLanguage,
+                        currentConversationData.targetRegion,
+                        currentConversationData.brandContext,
+                        currentConversationData.translationText,
+                        currentConversationData.files || []
+                    );
+                    
+                    // Re-enable translate button after regeneration
+                    translateBtn.disabled = false;
+                }
+            });
+            
+
+            
+            async function performTranslation() {
+                const sourceLanguage = document.getElementById('source-language').value;
+                const targetLanguage = document.getElementById('target-language-select').value;
+                const targetRegion = document.getElementById('target-region').value;
+                const brandContext = document.getElementById('brand-context').value;
+                const translationText = document.getElementById('translation-text').value;
+                
+
+                
+                // Validate all required fields
+                if (!translationText.trim()) {
+                    alert('Please enter text to translate');
+                    return;
+                }
+                if (!targetLanguage) {
+                    alert('Please select a target language');
+                    return;
+                }
+                if (!targetRegion) {
+                    alert('Please select a target region');
+                    return;
+                }
+                if (!brandContext.trim() && uploadedFiles.length === 0) {
+                    alert('Please enter brand context or upload brand files');
+                    return;
+                }
+                
+                await performTranslationWithData(sourceLanguage, targetLanguage, targetRegion, brandContext, translationText, uploadedFiles);
+            }
+            
+            // Function to increment translation count
+            async function incrementTranslationCount() {
+                try {
+                    const response = await fetch('YOUR_API_ENDPOINT/translate/increment-count', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: localStorage.getItem('user') || 'User'
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        console.error('Failed to increment count:', await response.text());
+                    }
+                } catch (error) {
+                    console.error('Error incrementing count:', error);
+                }
+            }
+            
+            async function performTranslationWithData(sourceLanguage, targetLanguage, targetRegion, brandContext, translationText, files = []) {
+                const isFirstTranslation = translationCount === 0;
+                const button = isFirstTranslation ? translateBtn : document.getElementById('regenerate-btn');
+                const newTranslationBtn = document.getElementById('new-translation-sidebar');
+                const originalText = button.querySelector('span').textContent;
+                const originalIcon = button.querySelector('i').className;
+                
+                // Ensure brandContext is a string, not a number or ID
+                if (typeof brandContext !== 'string') {
+                    brandContext = String(brandContext || '');
+                }
+                
+                // Note: currentBrandContextId is already being passed separately in callLambdaTranslation
+                
+                button.querySelector('span').textContent = isFirstTranslation ? 'Translating...' : 'Regenerating...';
+                button.querySelector('i').className = 'loading-spinner';
+                button.disabled = true;
+                
+                // Disable new translation button while processing
+                newTranslationBtn.disabled = true;
+                newTranslationBtn.style.opacity = '0.6';
+                newTranslationBtn.style.cursor = 'not-allowed';
+                
+                // Disable sidebar items
+                toggleSidebarItems(true);
+                
+                try {
+                    translationCount++;
+                    
+                    // Call Lambda function
+                    const result = await callLambdaTranslation(
+                        sourceLanguage,
+                        targetLanguage,
+                        targetRegion,
+                        brandContext,
+                        translationText,
+                        currentConvoId,
+                        files
+                    );
+                    
+                    // Store conversation ID for regenerate
+                    if (result.convoId) {
+                        currentConvoId = result.convoId;
+                    }
+                    
+                    if (isFirstTranslation) {
+                        // First translation - show results section
+                        document.getElementById('original-text').textContent = translationText;
+                        translationResults.classList.remove('hidden');
+                        
+                        // Hide form sections
+                        document.querySelectorAll('main .card:not(#translation-results)').forEach(card => {
+                            card.classList.add('hidden');
+                        });
+                        
+                        // Show regenerate button and hide translate button
+                        document.getElementById('regenerate-btn').classList.remove('hidden');
+                        translateBtn.classList.add('hidden');
+                    }
+                    
+                    // Add the new translation output
+                    addTranslationOutput(result, translationCount);
+                    
+                    // Call increment count API after successful translation
+                    await incrementTranslationCount();
+                    
+                    // Reload conversations to update sidebar if this was the first translation
+                    if (translationCount === 1) {
+                        // Store conversation data for regeneration
+                        const hasFiles = files && files.length > 0;
+                        currentConversationData = {
+                            sourceLanguage: sourceLanguage,
+                            targetLanguage: targetLanguage,
+                            targetRegion: targetRegion,
+                            brandContext: brandContext,
+
+                            translationText: translationText,
+                            files: files,
+                            uploadedFiles: hasFiles ? files : undefined
+                        };
+                        
+                        await loadConversations();
+                        
+                        // Auto-select the new conversation
+                        if (currentConvoId) {
+                            const newConversationItem = document.querySelector(`[data-id="${currentConvoId}"]`);
+                            if (newConversationItem) {
+                                newConversationItem.classList.add('active-conversation');
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Translation error:', error);
+                    if (error.message === 'INAPPROPRIATE_CONTENT') {
+                        alert('Your input contains inappropriate content and cannot be processed. Please modify your text and try again.');
+                    } else {
+                        alert('Translation failed. Please try again.');
+                    }
+                } finally {
+                    button.querySelector('span').textContent = originalText;
+                    button.querySelector('i').className = originalIcon;
+                    button.disabled = false;
+                    
+                    // Re-enable new translation button
+                    const newTranslationBtn = document.getElementById('new-translation-sidebar');
+                    newTranslationBtn.disabled = false;
+                    newTranslationBtn.style.opacity = '';
+                    newTranslationBtn.style.cursor = '';
+                    
+                    // Re-enable sidebar items
+                    toggleSidebarItems(false);
+                }
+            }
+        });
+        
+        // Copy to clipboard function
+        function copyToClipboard(text, button) {
+            // Ensure text is a string and handle special characters properly
+            const textToCopy = String(text || '');
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const icon = button.querySelector('i');
+                const originalClass = icon.className;
+                
+                // Change to check icon
+                icon.className = 'fas fa-check text-xs';
+                button.style.color = '#10b981';
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                // Fallback for older browsers
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    const icon = button.querySelector('i');
+                    const originalClass = icon.className;
+                    icon.className = 'fas fa-check text-xs';
+                    button.style.color = '#10b981';
+                    setTimeout(() => {
+                        icon.className = originalClass;
+                        button.style.color = '';
+                    }, 2000);
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed: ', fallbackErr);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
