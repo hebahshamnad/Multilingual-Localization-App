@@ -17,10 +17,6 @@ The platform allows users to upload **brand-specific context**, so all translati
 - 🔐 **Secure by design** with Cognito authentication, IAM roles, and KMS encryption  
 - 📊 **Scalable & observable** using CloudFront for delivery and CloudWatch for monitoring  
 
-
-## 🛠️ Tech Stack
-
-
 ## 🛠️ Tech Stack
 
 **AWS Services**
